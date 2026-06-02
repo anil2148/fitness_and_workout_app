@@ -16,6 +16,9 @@ import com.example.fitnessworkout.data.model.BodyMeasurement
 import com.example.fitnessworkout.data.model.FitnessTestResult
 import com.example.fitnessworkout.data.model.ProgressPhoto
 import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
+import com.example.fitnessworkout.data.model.AppSettings
+import com.example.fitnessworkout.data.model.CommunityPost
+import com.example.fitnessworkout.data.model.RecoveryLog
 import java.time.LocalDate
 
 class FitnessRepository(private val dao: FitnessDao) {
@@ -32,6 +35,9 @@ class FitnessRepository(private val dao: FitnessDao) {
     val achievements = dao.observeAchievements()
     val fitnessTests = dao.observeFitnessTests()
     val shareSummaries = dao.observeShareSummaries()
+    val settings = dao.observeSettings()
+    val communityPosts = dao.observeCommunityPosts()
+    val recovery = dao.observeRecovery()
 
     fun exercises(planId: Int) = dao.observeExercises(planId)
 
@@ -39,6 +45,10 @@ class FitnessRepository(private val dao: FitnessDao) {
         if (dao.planCount() == 0) {
             SampleData.plans().forEach { dao.insertPlanWithExercises(it.plan, it.exercises) }
         }
+        if (dao.communityPostCount() == 0) dao.insertCommunityPosts(listOf(
+            CommunityPost(author = "Maya", message = "Finished the beginner challenge today.", likes = 12),
+            CommunityPost(author = "Alex", message = "Desk stretch break complete. Small habits add up.", likes = 8)
+        ))
     }
 
     suspend fun saveUser(user: UserProfile) = dao.upsertUser(user)
@@ -78,5 +88,8 @@ class FitnessRepository(private val dao: FitnessDao) {
         dao.deleteAchievements(); dao.deleteFitnessTests(); dao.deleteShareSummaries()
         dao.deleteWaterLogs(); dao.deleteHealthMetrics(); dao.deleteReminderSettings(); dao.deleteCustomPlans()
         dao.deletePremiumStatus()
+        dao.deleteSettings(); dao.deleteRecovery()
     }
+    suspend fun saveSettings(item: AppSettings) = dao.upsertSettings(item)
+    suspend fun saveRecovery(item: RecoveryLog) = dao.insertRecovery(item)
 }

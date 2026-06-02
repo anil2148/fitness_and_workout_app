@@ -19,6 +19,9 @@ import com.example.fitnessworkout.data.model.BodyMeasurement
 import com.example.fitnessworkout.data.model.FitnessTestResult
 import com.example.fitnessworkout.data.model.ProgressPhoto
 import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
+import com.example.fitnessworkout.data.model.AppSettings
+import com.example.fitnessworkout.data.model.CommunityPost
+import com.example.fitnessworkout.data.model.RecoveryLog
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -121,6 +124,16 @@ interface FitnessDao {
     @Query("DELETE FROM reminder_settings") suspend fun deleteReminderSettings()
     @Query("DELETE FROM custom_workout_plans") suspend fun deleteCustomPlans()
     @Query("DELETE FROM premium_status") suspend fun deletePremiumStatus()
+
+    @Query("SELECT * FROM app_settings WHERE id = 1") fun observeSettings(): Flow<AppSettings?>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertSettings(item: AppSettings)
+    @Query("SELECT * FROM community_posts ORDER BY id DESC") fun observeCommunityPosts(): Flow<List<CommunityPost>>
+    @Insert suspend fun insertCommunityPosts(items: List<CommunityPost>)
+    @Query("SELECT COUNT(*) FROM community_posts") suspend fun communityPostCount(): Int
+    @Query("SELECT * FROM recovery_logs ORDER BY id DESC") fun observeRecovery(): Flow<List<RecoveryLog>>
+    @Insert suspend fun insertRecovery(item: RecoveryLog)
+    @Query("DELETE FROM app_settings") suspend fun deleteSettings()
+    @Query("DELETE FROM recovery_logs") suspend fun deleteRecovery()
 
     @Query("SELECT COUNT(*) FROM workout_plans")
     suspend fun planCount(): Int

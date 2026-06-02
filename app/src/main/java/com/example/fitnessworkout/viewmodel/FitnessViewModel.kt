@@ -17,6 +17,9 @@ import com.example.fitnessworkout.data.model.BodyMeasurement
 import com.example.fitnessworkout.data.model.FitnessTestResult
 import com.example.fitnessworkout.data.model.ProgressPhoto
 import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
+import com.example.fitnessworkout.data.model.AppSettings
+import com.example.fitnessworkout.data.model.CommunityPost
+import com.example.fitnessworkout.data.model.RecoveryLog
 import com.example.fitnessworkout.repository.FitnessRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -53,7 +56,10 @@ data class FitnessUiState(
     val photos: List<ProgressPhoto> = emptyList(),
     val achievements: List<Achievement> = emptyList(),
     val fitnessTests: List<FitnessTestResult> = emptyList(),
-    val shareSummaries: List<ShareableWorkoutSummary> = emptyList()
+    val shareSummaries: List<ShareableWorkoutSummary> = emptyList(),
+    val settings: AppSettings = AppSettings(),
+    val communityPosts: List<CommunityPost> = emptyList(),
+    val recovery: List<RecoveryLog> = emptyList()
 ) {
     val standardPlans get() = plans.filter { it.challengeDay == null }
     val challengePlans get() = plans.filter { it.challengeDay != null }.sortedBy { it.challengeDay }
@@ -74,7 +80,8 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         repository.healthMetric,
         repository.reminders,
         repository.customPlans
-        , repository.measurements, repository.photos, repository.achievements, repository.fitnessTests, repository.shareSummaries
+        , repository.measurements, repository.photos, repository.achievements, repository.fitnessTests, repository.shareSummaries,
+        repository.settings, repository.communityPosts, repository.recovery
     ) { values ->
         val user = values[0] as UserProfile?
         @Suppress("UNCHECKED_CAST") val plans = values[1] as List<WorkoutPlan>
@@ -89,6 +96,9 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         @Suppress("UNCHECKED_CAST") val achievements = values[10] as List<Achievement>
         @Suppress("UNCHECKED_CAST") val fitnessTests = values[11] as List<FitnessTestResult>
         @Suppress("UNCHECKED_CAST") val shareSummaries = values[12] as List<ShareableWorkoutSummary>
+        val settings = values[13] as AppSettings?
+        @Suppress("UNCHECKED_CAST") val communityPosts = values[14] as List<CommunityPost>
+        @Suppress("UNCHECKED_CAST") val recovery = values[15] as List<RecoveryLog>
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -103,7 +113,8 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             healthMetric = healthMetric,
             reminders = reminders ?: ReminderSettings(),
             customPlans = customPlans, measurements = measurements, photos = photos, achievements = achievements,
-            fitnessTests = fitnessTests, shareSummaries = shareSummaries
+            fitnessTests = fitnessTests, shareSummaries = shareSummaries, settings = settings ?: AppSettings(),
+            communityPosts = communityPosts, recovery = recovery
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FitnessUiState())
 
@@ -174,6 +185,11 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         repository.saveFitnessTest(FitnessTestResult(pushUps = pushUps, plankSeconds = plank, squats = squats, restingHeartRate = heartRate, score = score))
     }
     fun deleteAllData() = viewModelScope.launch { repository.deleteAllData() }
+    fun saveSettings(item: AppSettings) = viewModelScope.launch { repository.saveSettings(item) }
+    fun saveRecovery(sleep: Float, soreness: Int, energy: Int, stress: Int) = viewModelScope.launch {
+        val recommendation = when { sleep < 6 || stress > 7 -> "Rest day"; soreness > 6 -> "Light stretching"; energy > 7 -> "Strength workout"; else -> "Moderate workout" }
+        repository.saveRecovery(RecoveryLog(sleepHours = sleep, soreness = soreness, energy = energy, stress = stress, recommendation = recommendation))
+    }
 
     private fun isCurrentWeek(timestamp: Long): Boolean {
         val date = timestamp.toDate()

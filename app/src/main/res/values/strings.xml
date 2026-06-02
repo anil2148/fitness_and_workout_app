@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Fitness and Workout App</string>
+    <string name="settings_title">Global settings</string>
+    <string name="premium_member">Premium member</string>
+    <string name="medical_disclaimer">This app provides general fitness and wellness information only and is not medical advice. Consult a healthcare professional before starting a new fitness program.</string>
+</resources>

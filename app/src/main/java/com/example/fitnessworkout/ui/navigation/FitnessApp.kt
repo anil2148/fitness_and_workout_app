@@ -44,6 +44,18 @@ import com.example.fitnessworkout.ui.screens.PrivacyPolicyScreen
 import com.example.fitnessworkout.ui.screens.ProgressPhotosScreen
 import com.example.fitnessworkout.ui.screens.ShareWorkoutScreen
 import com.example.fitnessworkout.ui.screens.TermsScreen
+import com.example.fitnessworkout.ui.screens.BugReportScreen
+import com.example.fitnessworkout.ui.screens.CalendarScreen
+import com.example.fitnessworkout.ui.screens.CommunityScreen
+import com.example.fitnessworkout.ui.screens.ConsentScreen
+import com.example.fitnessworkout.ui.screens.ExportDataScreen
+import com.example.fitnessworkout.ui.screens.FormCheckScreen
+import com.example.fitnessworkout.ui.screens.MonetizationScreen
+import com.example.fitnessworkout.ui.screens.RecoveryScreen
+import com.example.fitnessworkout.ui.screens.SettingsScreen
+import com.example.fitnessworkout.ui.screens.SpecializedScreen
+import com.example.fitnessworkout.ui.screens.TrainerModeScreen
+import com.example.fitnessworkout.ui.screens.WhatsNewScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -106,6 +118,18 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("medical") { MedicalDisclaimerScreen { navController.popBackStack() } }
             composable("feedback") { FeedbackScreen { navController.popBackStack() } }
             composable("delete-data") { DeleteAllDataScreen(viewModel) { navController.popBackStack() } }
+            composable("settings") { SettingsScreen(viewModel, { navController.popBackStack() }, { navController.navigate(it) }) }
+            composable("community") { CommunityScreen(viewModel) { navController.popBackStack() } }
+            composable("trainer") { TrainerModeScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("form-check") { FormCheckScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("specialized") { SpecializedScreen { navController.popBackStack() } }
+            composable("calendar") { CalendarScreen(viewModel) { navController.popBackStack() } }
+            composable("recovery") { RecoveryScreen(viewModel) { navController.popBackStack() } }
+            composable("export-data") { ExportDataScreen { navController.popBackStack() } }
+            composable("consent") { ConsentScreen { navController.popBackStack() } }
+            composable("whats-new") { WhatsNewScreen { navController.popBackStack() } }
+            composable("bug-report") { BugReportScreen { navController.popBackStack() } }
+            composable("regional-pricing") { MonetizationScreen { navController.popBackStack() } }
         }
     }
 }

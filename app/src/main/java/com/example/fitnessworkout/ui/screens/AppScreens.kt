@@ -68,6 +68,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
+import com.example.fitnessworkout.data.model.AppSettings
+import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
@@ -97,6 +101,11 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var minutes by remember { mutableIntStateOf(20) }
     var equipment by remember { mutableStateOf("No Equipment") }
     var style by remember { mutableStateOf("Balanced") }
+    var country by remember { mutableStateOf("United States") }
+    var language by remember { mutableStateOf("English") }
+    var unitSystem by remember { mutableStateOf("Imperial") }
+    var diet by remember { mutableStateOf("Balanced") }
+    var location by remember { mutableStateOf("Home") }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -120,10 +129,16 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
         item { OnboardingChoices("Available time", listOf(10, 20, 30, 45).map { "$it min" }, "$minutes min") { minutes = it.substringBefore(" ").toInt() } }
         item { OnboardingChoices("Equipment", listOf("No Equipment", "Dumbbells", "Resistance Band", "Gym"), equipment) { equipment = it } }
         item { OnboardingChoices("Workout style", listOf("Balanced", "Strength", "Cardio", "Mobility", "HIIT"), style) { style = it } }
+        item { OnboardingChoices("Country / region", listOf("United States", "India", "Spain", "France", "Brazil"), country) { country = it; unitSystem = Units.defaultSystem(it) } }
+        item { OnboardingChoices("Preferred language", listOf("English", "Hindi", "Spanish", "French", "Arabic"), language) { language = it } }
+        item { OnboardingChoices("Unit system", listOf("Metric", "Imperial"), unitSystem) { unitSystem = it } }
+        item { OnboardingChoices("Diet preference", listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly"), diet) { diet = it } }
+        item { OnboardingChoices("Workout location", listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping"), location) { location = it } }
         item {
             Button(
                 onClick = {
                     viewModel.saveUser(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal, level = level, minutes = minutes, equipment = equipment, style = style)
+                    viewModel.saveSettings(AppSettings(country = country, language = language, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location))
                 },
                 enabled = name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
@@ -173,7 +188,7 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
                 StatCard("Water", "${state.water.amountMl} / ${state.water.goalMl} ml", Modifier.weight(1f))
             }
         }
-        if (state.isPremiumUser) item { Text("★ PREMIUM MEMBER", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold) }
+        if (state.isPremiumUser) item { Text("★ ${stringResource(R.string.premium_member)}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold) }
         item {
             ChallengeProgress(challengeCompleted)
         }
@@ -425,7 +440,8 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
                 "custom" to "AI-style custom plan", "reminders" to "Smart reminders", "measurements" to "Body measurements",
                 "photos" to "Progress photos", "achievements" to "Achievements", "fitness-test" to "Fitness level test",
                 "share" to "Workout share card", "privacy" to "Privacy policy", "terms" to "Terms",
-                "medical" to "Medical disclaimer", "feedback" to "Feedback", "delete-data" to "Delete all data").forEach { (route, label) ->
+                "medical" to "Medical disclaimer", "feedback" to "Feedback", "delete-data" to "Delete all data",
+                "settings" to "Global settings", "regional-pricing" to "Regional pricing preview").forEach { (route, label) ->
                 OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
             }
         }

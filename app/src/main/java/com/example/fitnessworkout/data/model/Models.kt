@@ -63,7 +63,12 @@ data class Exercise(
     val localVideoName: String = "",
     val caloriesPerMinute: Int = 6,
     val safetyTips: String = "Stop if you feel pain. Keep your movement controlled.",
-    val commonMistakes: String = "Avoid rushing repetitions or losing alignment."
+    val commonMistakes: String = "Avoid rushing repetitions or losing alignment.",
+    val isPremium: Boolean = false,
+    val isLowImpact: Boolean = false,
+    val isNoJumping: Boolean = false,
+    val isKneeFriendly: Boolean = true,
+    val isBackFriendly: Boolean = true
 )
 
 @Entity(
@@ -166,6 +171,26 @@ data class ShareableWorkoutSummary(
     val durationMinutes: Int,
     val streak: Int
 )
+
+@Entity(tableName = "app_settings")
+data class AppSettings(
+    @PrimaryKey val id: Int = 1,
+    val country: String = "United States",
+    val language: String = "English",
+    val unitSystem: String = "Metric",
+    val dietPreference: String = "Balanced",
+    val workoutLocation: String = "Home",
+    val analyticsConsent: Boolean = false,
+    val cloudSyncConsent: Boolean = false
+)
+
+@Entity(tableName = "community_posts")
+data class CommunityPost(@PrimaryKey(autoGenerate = true) val id: Int = 0, val author: String, val message: String, val likes: Int = 0)
+
+@Entity(tableName = "recovery_logs")
+data class RecoveryLog(@PrimaryKey(autoGenerate = true) val id: Int = 0, val sleepHours: Float, val soreness: Int, val energy: Int, val stress: Int, val recommendation: String)
+
+data class PricingDisplay(val currency: String, val monthly: String, val yearly: String, val lifetime: String)
 
 data class WorkoutPlanWithExercises(
     val plan: WorkoutPlan,

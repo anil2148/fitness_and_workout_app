@@ -23,6 +23,11 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Smart reminders for workouts, water, meals, weight check-ins, and progress photos
 - Privacy policy, terms, medical disclaimer, feedback, and local delete-all-data screens
 - Improved onboarding for goal, level, available time, equipment, age, height, weight, and workout style
+- Global onboarding and settings for country, language, metric or imperial units, diet, and workout location
+- English, Hindi, Spanish, French, and Arabic resource packs with RTL manifest support
+- Regional pricing display models for USD, INR, EUR, GBP, and BRL
+- Offline community feed, trainer mode, AI form-check, recovery score, calendar, and specialized routine placeholders
+- Desk-worker, Indian fitness, low-impact, no-jumping, and apartment-friendly routine ideas
 - Material 3 UI with a responsive scrollable layout, rounded cards, icons, and simple animations
 
 ## Tech Stack
@@ -63,6 +68,34 @@ app/src/main/java/com/example/fitnessworkout/
 4. Run the `app` configuration.
 
 Workout plans are inserted into the local Room database the first time the app launches.
+
+## Global Support
+
+- Supported resource packs: English, Hindi, Spanish, French, and Arabic
+- Supported units: metric and imperial
+- Add translations in `app/src/main/res/values-<locale>/strings.xml`
+- Regional prices are display models only. Replace them with Google Play Billing product details before release.
+
+## Privacy and Legal
+
+Health records remain offline-first in Room. Settings include analytics and cloud-sync consent placeholders. The Profile and Settings screens link to privacy, terms, medical disclaimer, export, feedback, bug report, and delete-local-data controls.
+
+## Build in Codespaces
+
+Install Android SDK 35 and run:
+
+```bash
+./gradlew clean assembleDebug
+```
+
+The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Future Integrations
+
+- Google Play Billing and AdMob
+- Firebase Auth, Analytics, Crashlytics, Firestore backup, and video CDN storage
+- Health Connect, Google Fit, and Wear OS
+- Real exercise videos and MediaPipe or ML Kit form analysis
 
 ## Future Monetization Ideas
 

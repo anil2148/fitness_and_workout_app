@@ -93,6 +93,7 @@ fun AdBannerPlaceholder(modifier: Modifier = Modifier) {
         Column {
             Text("Ad space", color = Color.White, fontWeight = FontWeight.Bold)
             Text("Reserved for a future fitness partner", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
+            Text("Rewarded workout unlock placeholder", color = FitnessGreen, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

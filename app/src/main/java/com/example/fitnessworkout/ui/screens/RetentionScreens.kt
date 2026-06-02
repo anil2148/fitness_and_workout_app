@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.fitnessworkout.data.model.BodyMeasurement
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
+import com.example.fitnessworkout.utils.Units
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 import java.time.Instant
 import java.time.ZoneId
 
@@ -31,7 +34,7 @@ import java.time.ZoneId
         item { listOf("Weight kg", "Waist cm", "Chest cm", "Arms cm", "Thighs cm", "Hips cm", "Body fat %").forEachIndexed { i, label -> NumberField(values[i], { text -> values = values.toMutableList().also { it[i] = text } }, label) } }
         item { Button({ values[0].toFloatOrNull()?.let { vm.saveMeasurement(BodyMeasurement(weightKg = it, waistCm = values[1].number(), chestCm = values[2].number(), armsCm = values[3].number(), thighsCm = values[4].number(), hipsCm = values[5].number(), bodyFatPercent = values[6].number())) } }, Modifier.fillMaxWidth()) { Text("Save measurement") } }
         if (!state.isPremiumUser && state.measurements.size >= 3) item { OutlinedButton(premium, Modifier.fillMaxWidth()) { Text("Unlock full measurement history") } }
-        items(state.measurements) { m -> Text("${date(m.recordedAt)} • ${m.weightKg} kg • waist ${m.waistCm} • body fat ${m.bodyFatPercent}%") }
+        items(state.measurements) { m -> Text("${date(m.recordedAt)} • ${Units.weight(m.weightKg, state.settings.unitSystem)} • waist ${Units.length(m.waistCm, state.settings.unitSystem)} • body fat ${m.bodyFatPercent}%") }
     }
 }
 
@@ -80,7 +83,7 @@ import java.time.ZoneId
 
 @Composable fun PrivacyPolicyScreen(back: () -> Unit) = LegalScreen("Privacy policy", "Your fitness data stays on this device. Progress photo URIs are stored locally. No analytics or advertising SDK is connected.", back)
 @Composable fun TermsScreen(back: () -> Unit) = LegalScreen("Terms", "Use the app responsibly. Premium purchase buttons are local mock controls until billing integration is added.", back)
-@Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen("Medical disclaimer", "This app provides general fitness and nutrition information only and is not medical advice. Consult a healthcare professional before starting a new program.", back)
+@Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen("Medical disclaimer", stringResource(R.string.medical_disclaimer), back)
 @Composable fun FeedbackScreen(back: () -> Unit) = LegalScreen("Feedback", "Feedback form placeholder. Connect your support email or backend endpoint before release.", back)
 @Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit) = LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button(vm::deleteAllData, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }
 

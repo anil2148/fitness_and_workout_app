@@ -19,6 +19,7 @@ import com.example.fitnessworkout.ui.components.ChallengeProgress
 import com.example.fitnessworkout.ui.components.SectionTitle
 import com.example.fitnessworkout.ui.components.WorkoutPlanCard
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
+import com.example.fitnessworkout.utils.Units
 
 @Composable fun ChallengesScreen(vm: FitnessViewModel, padding: PaddingValues, openPlan: (Int) -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
@@ -32,7 +33,7 @@ import com.example.fitnessworkout.viewmodel.FitnessViewModel
 @Composable fun WaterScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); var custom by remember { mutableStateOf("") }
     FeaturePage("Water tracker", back) {
-        Text("${state.water.amountMl} / ${state.water.goalMl} ml", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("${Units.water(state.water.amountMl, state.settings.unitSystem)} / ${Units.water(state.water.goalMl, state.settings.unitSystem)}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         LinearProgressIndicator({ (state.water.amountMl / state.water.goalMl.toFloat()).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
         Button({ vm.addWater(250) }, Modifier.fillMaxWidth()) { Text("Add 250 ml") }
         Field(custom, { custom = it }, "Custom amount (ml)", true)
@@ -58,7 +59,7 @@ import com.example.fitnessworkout.viewmodel.FitnessViewModel
     FeaturePage("Diet guidance", back) {
         Text("Balanced daily guidance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("Protein 30% • Carbs 45% • Healthy fats 25%\nRecommended water: 2.5-3.0 L")
-        listOf("Weight Loss", "Muscle Gain", "Balanced", "Vegetarian", "Indian diet option").forEach { Text("• $it meal plan") }
+        listOf("Weight Loss", "Muscle Gain", "Balanced", "Vegetarian", "Indian diet option", "Global high protein", "Mediterranean", "Vegan", "Keto", "Low carb", "Halal-friendly", "Gluten-free", "Dairy-free", "Budget meals").forEach { Text("• $it meal plan") }
         Text("This app provides general fitness and nutrition information only and is not medical advice.", style = MaterialTheme.typography.bodySmall)
     }
 }
