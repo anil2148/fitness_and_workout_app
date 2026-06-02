@@ -51,6 +51,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Exercise guide screen with large illustration, video placeholder, training details, safety tips, mistakes, and start action
 - Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
 - Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
+- Manual Android-phone regression checklist in `docs/MANUAL_QA_CHECKLIST.md`
 
 ## Tech Stack
 
@@ -123,7 +124,15 @@ Run the Linux/Codespaces-friendly verification script:
 ./scripts/verify_app.sh
 ```
 
-It prints the Java version, cleans the project, attempts JVM unit tests, builds the debug APK, and confirms that the APK exists. Run `./gradlew testDebugUnitTest` directly when unit-test success is required.
+It prints the Java version, cleans the project, runs JVM unit tests, stops immediately if a test fails, builds the debug APK, and confirms that the APK exists.
+
+To run the required checks individually:
+
+```bash
+./gradlew clean
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+```
 
 ## Download APK from GitHub Actions
 
@@ -151,7 +160,13 @@ Exercise illustrations are app-owned vector drawables stored in `app/src/main/re
 
 The video guide UI is intentionally offline-safe and does not require MP4 files. Licensed local prototypes can later add files under `app/src/main/res/raw` using names such as `video_push_ups.mp4`, `video_squats.mp4`, and `video_plank.mp4`. For production, prefer a CDN or Firebase Storage instead of bundling a large video catalog into the APK.
 
-Only use app-owned, licensed, or confirmed royalty-free photos, illustrations, and videos. Do not add random internet media. See `docs/media/README.md` for the media checklist.
+Use only owned, licensed, royalty-free, or AI-generated media that you have rights to use. Do not add random internet media. See `docs/media/README.md` for the media checklist.
+
+## Manual MVP Checks
+
+- Language switching: open Profile, choose **Global settings**, change English to Hindi, confirm the UI refreshes, restart the app, then repeat with English and Arabic.
+- Premium mock unlock: open **Explore Premium**, tap **Unlock Premium**, return to a locked feature, and confirm local Premium access remains active after an app restart.
+- Full phone checklist: follow `docs/MANUAL_QA_CHECKLIST.md` after installing the debug APK.
 
 ## Known Limitations
 

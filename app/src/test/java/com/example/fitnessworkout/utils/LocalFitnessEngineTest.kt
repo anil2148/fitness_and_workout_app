@@ -7,6 +7,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LocalFitnessEngineTest {
+    @Test fun quickWorkoutSafelyHandlesEmptyLibraryAndInvalidMinutes() {
+        val workout = LocalFitnessEngine.quickWorkout(emptyList(), minutes = -5, filters = emptySet())
+
+        assertEquals(5, workout.durationMinutes)
+        assertEquals(0, workout.estimatedCalories)
+        assertTrue(workout.exercises.isEmpty())
+    }
+
     @Test fun recommendationPrefersMatchingGoalAndLevel() {
         val user = UserProfile(
             name = "Test",

@@ -1,97 +1,73 @@
 # Fitness App Feature Audit
 
-This audit documents the stabilized offline-first Android app. Statuses describe the implementation at the time of the verified debug build.
+This audit records the stabilized offline-first MVP. Automated checks and source-level route audits are complete. Final touch testing on a physical Android phone or emulator is tracked separately in `docs/MANUAL_QA_CHECKLIST.md`.
 
 ## Feature Status
 
-| # | Feature | Status | Notes |
-|---|---|---|---|
-| 1 | App launch | Working | `MainActivity` creates Room repository and Compose UI. |
-| 2 | Splash screen | Fixed | Splash waits for local state, routes new users into onboarding, and routes returning users directly home. |
-| 3 | Onboarding | Fixed | Positive-number validation and one-time medical acknowledgement are required before profile save. |
-| 4 | Home dashboard | Working | Stats, recommendation, score, habit progress, recent workout, and quick actions render from state. |
-| 5 | Bottom navigation | Working | Home, Workouts, Challenges, Progress, and Profile routes are registered and selected correctly. |
-| 6 | Workouts list | Fixed | Search, level filters, empty results, and Free or Premium plan cards route safely through warm-up. |
-| 7 | Workout detail | Fixed | Exercise list, app-owned illustrations, Premium-safe video placeholders, guide links, safety text, favorite action, manual completion, and guided-player entry work. |
-| 8 | Workout player | Fixed | Guided player supports current and next exercise illustrations, video placeholder, start, pause, resume, next, skip, rest countdowns, finish, progress, and safe exit. |
-| 9 | Exercise visuals | Fixed | Core exercises use distinct app-owned vector illustrations with a guaranteed `exercise_placeholder.xml` fallback. |
-| 10 | Exercise video placeholder | Hidden as Coming Soon | Premium-safe video card uses thumbnails, accessibility labels, and nullable local-video lookup without requiring MP4 files. |
-| 11 | Completed workout saving | Working | Guided, manual, and quick workout completion save to Room. |
-| 12 | Progress screen | Working | Totals, timeline, reports, PDF preview, and Premium analytics link are safe. |
-| 13 | Streak calculation | Fixed | Extracted pure logic with JVM regression test. |
-| 14 | Calories burned | Working | Saved completed workouts aggregate into dashboard and reports. |
-| 15 | Premium screen | Fixed | Scrollable comparison, mock trial, disabled restore placeholder, terms, and privacy links. |
-| 16 | Premium mock unlock | Working | Device-local Room status persists. |
-| 17 | Premium locked content | Working | Locked plans and Premium screens route to Premium safely. |
-| 18 | Challenges | Working | Free beginner and locked Premium challenge cards display. |
-| 19 | Custom workout plan | Working | Premium local rule-based plan generator persists plans. |
-| 20 | Diet screen | Working | Premium local guidance only; not medical advice. |
-| 21 | BMI calculator | Fixed | Rejects invalid values and uses tested pure calculation. |
-| 22 | BMR calculator | Fixed | Rejects invalid values and uses tested pure calculation. |
-| 23 | Calorie calculator | Fixed | Uses validated values and extracted calorie-needs calculation. |
-| 24 | Water tracker | Fixed | Rejects invalid custom amounts and avoids zero-goal division. |
-| 25 | Body measurement tracker | Fixed | Validates positive weight, non-negative values, and body-fat range. |
-| 26 | Progress photo placeholder | Working | Local picker and preview are stable with free-tier limit. |
-| 27 | Fitness score | Fixed | Ring, level, weekly comparison, and tips display safely. |
-| 28 | Quick workout mode | Working | Existing exercise library generates filtered 5, 10, or 15-minute sessions. |
-| 29 | Recommended workouts | Working | Local rule engine uses profile, history, skips, location, injury-safe setting, and Premium status. |
-| 30 | AI coach placeholders | Hidden as Coming Soon | Premium local mock responses only; no external AI call. |
-| 31 | PDF report placeholder | Hidden as Coming Soon | Premium preview works; PDF export button is disabled with Coming Soon label. |
-| 32 | Reminder settings | Working | Preferences persist locally; notification scheduling remains placeholder. |
-| 33 | Settings screen | Working | Country, language preference, units, diet, location, consent placeholders, and injury-safe setting persist. |
-| 34 | Profile screen | Fixed | Edit validation, reset confirmation, and safe links work. |
-| 35 | Language settings | Fixed | DataStore persists `en`, `hi`, `es`, `fr`, or `ar`; the locale context is applied before Compose loads and Settings recreates the activity after a language change. |
-| 36 | Metric/imperial unit settings | Working | Display conversions work; profile entry remains metric. |
-| 37 | Privacy policy screen | Working | Local privacy summary renders safely. |
-| 38 | Terms screen | Working | Local terms summary renders safely. |
-| 39 | Medical disclaimer screen | Working | Packaged localized string is available in all values folders. |
-| 40 | Delete data | Fixed | Requires confirmation before local data deletion. |
-| 41 | Export data placeholder | Hidden as Coming Soon | Uses the generic stable Coming Soon screen for future CSV / JSON export. |
-| 42 | Community placeholder | Working | Local seeded mock feed. |
-| 43 | Trainer mode placeholder | Hidden as Coming Soon | Premium stable placeholder only. |
-| 44 | Smart calendar | Working | Local weekly summary placeholder. |
-| 45 | Recovery score | Fixed | Rejects invalid hours and out-of-range ratings. |
-| 46 | Desk worker fitness | Working | Specialized content screen. |
-| 47 | Indian fitness | Working | Specialized content and category guidance. |
-| 48 | Rate app/share app/feedback | Fixed | Share works; feedback validates and saves locally; rating is a disabled Coming Soon placeholder. |
-| 49 | GitHub Actions APK workflow | Fixed | Java 17, Android SDK setup, build, tests, and `fitness-workout-debug-apk` upload. |
-| 50 | README instructions | Fixed | Build, verification, APK download, install, placeholder, limitation, and troubleshooting sections. |
+| Feature/Page | Status | What was tested | Fix applied | Notes |
+|---|---|---|---|---|
+| Gradle project and Android manifest | Working | Debug compilation, Room KSP generation, resources, launcher activity, and RTL manifest flag | No additional change required | Minimum SDK 26 and target SDK 35 remain intact. |
+| Splash and returning-user launch | Working | Source audit of loading state, profile lookup, medical acknowledgement, and splash back-stack removal | No additional change required | Device touch test remains in the manual checklist. |
+| Fresh-install onboarding | Fixed | Empty, non-numeric, zero, and negative profile input paths; acknowledgement requirement; local save sequence | Added friendly validation error and safe parsing before profile persistence | Onboarding choices now wrap on narrow screens. |
+| Home dashboard | Working | Null-safe greeting, stats, recommendation, fitness score, habits, recent plan, and quick-action routes | No additional change required | Empty plan state remains safe while Room seeds local samples. |
+| Bottom navigation | Working | Home, Workouts, Challenges, Progress, and Profile routes against `NavHost` registrations | No additional change required | Selected-tab state uses the active destination route. |
+| Workout list and search | Working | Search, level filtering, favorites route, challenge tab, Premium plan lock, and empty results | Added challenge-loading empty state | Sample plans seed only when the Room plan table is empty. |
+| Workout detail | Fixed | Plan loading, exercise loading, favorite toggle, illustration fallback, Premium video placeholder, timer, finish, and stop paths | Added friendly loading states for unavailable plan or exercise data | Manual completion requires each exercise before save. |
+| Guided workout player | Fixed | Safe exercise indexing, current and next illustration, video placeholder, timer, rest, pause, resume, next, skip, finish, and stop warning | Made player content scrollable on small screens | Missing exercise data displays a safe loading message. |
+| Completed workout persistence | Working | Repository save paths for detail, guided player, and quick workouts | No additional change required | Saves history, share summary, habit progress, and achievements locally. |
+| Exercise media fallback | Working | Drawable resource lookup, missing-name fallback, vector resources, accessibility descriptions, and nullable local-video lookup | No additional change required | Real MP4 files are optional and absent by design. |
+| Premium mock unlock | Working | Room-backed Premium status, lock routing, ad placeholder hiding, and disabled restore placeholder | No additional change required | Real Google Play Billing remains Coming Soon. |
+| Challenges | Fixed | List route, lock behavior, detail routing through warm-up, and empty-data behavior | Added explicit loading empty state | Advanced challenge logic remains local. |
+| Water tracker | Fixed | Positive custom amount validation, zero-goal progress safety, reset action, and habit synchronization | Reset now clears the daily water-goal habit flag | Input remains milliliters. |
+| Health calculators | Working | BMI, BMR, calorie needs, ideal-weight range, water estimate, and invalid-value handling | Existing pure calculations retained | Calculator entry remains metric; converted display support is limited. |
+| Body measurement tracker | Fixed | Positive weight, non-negative values, body-fat range, free limit, Premium history, and list rendering | Added visible message when free history is full | Free users retain three local entries. |
+| Progress photos | Working | Local picker, nullable URI, before/after view, removal, and free limit | No additional change required | URI previews are local and may depend on Android provider availability. |
+| Fitness test, score, habits, recovery, and reports | Working | Validation, empty states, local persistence, score bounds, weekly report, and monthly report | No additional change required | Recovery guidance is general wellness content only. |
+| Quick workout mode | Fixed | Empty exercise library, invalid duration input, filters, local generation, preview media, and completion guard | Engine now clamps duration to 5-15 minutes; empty library cannot be completed | UI offers 5, 10, and 15 minutes. |
+| Profile and edit profile | Fixed | Profile state, edit validation, reset confirmation, dark mode, and feature links | Added safe missing-profile state and friendly edit validation | Delete-all now routes into onboarding after deletion completes. |
+| Settings and language switching | Fixed | DataStore language code, pre-Compose locale wrapper, immediate activity recreation, locale fallback, RTL flag, and key parity | Retained working runtime locale manager and complete resource-key packs | Supports `en`, `hi`, `es`, `fr`, and `ar`. |
+| Delete all local data | Fixed | Confirmation flow, Room clearing order, callback timing, and navigation after delete | Waits for repository deletion before routing to onboarding | Prevents a blank Profile screen after data deletion. |
+| Privacy, terms, disclaimer, consent, and data safety | Working | Registered routes, packaged copy, back buttons, disclaimer acknowledgement, and delete/export links | No additional change required | Export remains Coming Soon. |
+| AI previews, PDF export, trainer mode, and form check | Coming Soon | Premium routing, safe local placeholder pages, disabled external operations, and back buttons | No additional change required | No external AI, camera, or PDF API is called. |
+| Notifications, billing, ads, cloud, and Firebase | Coming Soon | Placeholder architecture and absence of unsafe permission or service calls | No additional change required | Production integrations require consent and release configuration. |
+| Share app and workout share card | Fixed | Nullable share summary and Android share intent paths | Wrapped share launches safely so missing handlers do not crash the app | Rating remains a disabled Play Store placeholder. |
+| Verification script | Fixed | Java check, clean, required unit-test failure behavior, APK build, and APK existence check | Unit-test failures now stop verification | Run `./scripts/verify_app.sh`. |
+| GitHub Actions APK workflow | Fixed | Trigger branches, manual dispatch, Java 17, Android SDK, combined test/build command, and artifact upload | CI now runs `./gradlew clean testDebugUnitTest assembleDebug` | Artifact name is `fitness-workout-debug-apk`. |
 
-## Placeholder Policy
+## Navigation Audit
 
-The following integrations intentionally remain offline-safe Coming Soon placeholders: Google Play Billing, AdMob, real AI API calls, exercise videos, PDF export, Firebase login, cloud backup, push notifications, Health Connect, Wear OS, and ML pose detection.
+Every visible route referenced by Home, Profile, Settings, workout cards, Premium links, legal links, and bottom navigation has a matching `NavHost` registration. Dynamic plan and exercise routes parse IDs with `toIntOrNull()` and render safe loading or unavailable states instead of throwing navigation exceptions.
 
-## MVP Verification Matrix
-
-| Feature name | Status | Notes | Tested command or manual check |
-|---|---|---|---|
-| New-user onboarding | Working | Requires valid values and disclaimer acknowledgement before saving. | Manual code-path check; `./gradlew assembleDebug` |
-| Returning-user launch | Fixed | Splash waits for Room-backed state and routes an acknowledged profile directly to Home. | Manual code-path check; `./gradlew assembleDebug` |
-| Home dashboard | Working | Cards, quick actions, recommendations, fitness score, and habits read from state. | Manual code-path check |
-| Workout search and filter | Fixed | Case-insensitive search, level chips, and empty results are safe. | Manual code-path check; `./gradlew assembleDebug` |
-| Workout player | Fixed | Start, pause, resume, next, skip, rest countdown, finish, and safe exit are available. | Manual code-path check; `./gradlew assembleDebug` |
-| Exercise media | Fixed | App-owned vectors, fallback lookup, video placeholders, player thumbnails, and exercise guide routing work offline. | `./gradlew testDebugUnitTest`; `./gradlew clean assembleDebug` |
-| Completed-workout persistence | Working | Guided, detail, and quick-workout flows save through the Room repository. | Manual code-path check |
-| Progress and streak | Working | Dashboard and reports consume persisted history; streak math has regression coverage. | `./gradlew testDebugUnitTest` |
-| Health calculators | Fixed | BMI, BMR, calorie needs, and water intake use extracted validated calculations. | `./gradlew testDebugUnitTest` |
-| Unit settings | Fixed | Profile and supported tracking displays use metric or imperial formatting. | Manual code-path check |
-| Legal and data controls | Working | Settings and Profile route to privacy, terms, medical disclaimer, consent, export, and confirmed deletion. | Manual code-path check |
-| Runtime language switching | Fixed | DataStore persistence, pre-Compose locale wrapping, immediate Settings refresh, complete resource-key parity, English fallback, and Arabic RTL manifest support are wired. | `./gradlew testDebugUnitTest`; `./gradlew clean assembleDebug` |
-| Premium and unfinished integrations | Working | Locked content routes to Premium; incomplete production integrations remain explicit Coming Soon placeholders. | Manual code-path check |
-| Debug APK generation | Working | Verification script builds and confirms the expected APK path. | `./scripts/verify_app.sh` |
+Incomplete integrations route to stable placeholder pages or disabled actions. The reusable `ComingSoonScreen` accepts a title, description, back action, and optional Premium-lock indicator.
 
 ## Database Audit
 
 - Room entities and DAO queries compile through KSP.
-- `fallbackToDestructiveMigration()` remains enabled for development schema changes.
-- Sample workout, community, and announcement data load only when their corresponding tables are empty.
-- DataStore is reserved for lightweight privacy preference support; structured fitness state stays in Room.
+- Database schema version changes use `fallbackToDestructiveMigration()` for development stability.
+- Sample workouts, community cards, and announcements seed only when their corresponding tables are empty.
+- Workout completion persists history, a share card, habits, and achievements.
+- DataStore persists the selected locale code independently of structured Room state.
 
-## Verification
+## Language Switching Audit
+
+| Scenario | Result | Evidence |
+|---|---|---|
+| Default language is English | Working | DataStore falls back to `en`; JVM fallback test passes. |
+| Change language to Hindi | Working | Settings stores `hi`, shows a restart toast, and recreates the activity. |
+| Home, Profile, and Settings update | Working | Major labels use localized resources; source-level code-path audit completed. |
+| Restart keeps Hindi | Working | `MainActivity.attachBaseContext()` reads DataStore before Compose loads. |
+| Change back to English | Working | Settings persists `en`; JVM name/code mapping test passes. |
+| Arabic RTL | Working | `ar` mapping test passes, layout direction updates, and manifest sets `android:supportsRtl="true"`. |
+| Missing translations | Fixed | English, Hindi, Spanish, French, and Arabic folders contain matching keys. Secondary untranslated phrases safely fall back to English copy. |
+
+## Automated Verification
 
 Run:
 
 ```bash
+./gradlew clean
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
 ./scripts/verify_app.sh
 ```
 
@@ -103,20 +79,9 @@ app/build/outputs/apk/debug/app-debug.apk
 
 ## Known Limitations
 
-- Debug APK only; Play Store publishing still requires signed release configuration.
-- Secondary content may remain English where translated copy is not available; the complete resource-key catalog and Android fallback behavior avoid missing-key crashes.
-- Profile and calculator entry fields use metric input; selected units affect supported displays.
+- Final touch testing on an installed APK still requires an Android phone or emulator; use `docs/MANUAL_QA_CHECKLIST.md`.
+- The generated APK is a debug build. Play Store submission requires a signed release bundle.
+- Some secondary UI content remains English when translated copy is unavailable.
+- Profile and calculator entry fields remain metric; selected units affect supported displays.
 - Progress photos store local picker URIs and are not cloud backed up.
 - Notification scheduling and external service integrations remain intentionally disabled.
-
-## Language Switching Audit
-
-| Scenario | Result | Evidence |
-|---|---|---|
-| Default language is English | Working | DataStore falls back to `en`; JVM fallback test passes. |
-| Change language to Hindi | Working | Settings saves `hi`, displays a restart toast, and recreates the activity. |
-| Home, Profile, and Settings update | Working | Major labels use localized resources; code-path audit completed. |
-| Restart keeps Hindi | Working | `MainActivity.attachBaseContext()` reads DataStore before Compose starts. |
-| Change back to English and restart | Working | Settings persists `en`; JVM name/code mapping test passes. |
-| Arabic selection and RTL | Working | `ar` mapping test passes, locale wrapper updates layout direction, and manifest has `android:supportsRtl="true"`. |
-| Missing translation keys | Fixed | English, Hindi, Spanish, French, and Arabic folders each contain the same 126 keys. |

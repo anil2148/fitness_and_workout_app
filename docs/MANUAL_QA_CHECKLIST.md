@@ -1,0 +1,76 @@
+# Manual Android QA Checklist
+
+Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` on an API 26+ Android phone or emulator.
+
+## Fresh Install
+
+- [ ] Clear app data or install fresh.
+- [ ] Confirm the splash screen appears briefly.
+- [ ] Confirm onboarding opens instead of a blank page.
+- [ ] Try empty and invalid age, height, and weight values; confirm a friendly error appears.
+- [ ] Enter valid values, accept the disclaimer, finish onboarding, and confirm Home opens.
+
+## Navigation
+
+- [ ] Open Home, Workouts, Challenges, Progress, and Profile from the bottom bar.
+- [ ] Confirm the selected bottom tab updates.
+- [ ] Confirm top-bar back buttons return safely.
+- [ ] Open every Profile and Settings link; confirm a working page or safe Coming Soon page appears.
+
+## Workout Flow
+
+- [ ] Open Workouts and select a plan.
+- [ ] Confirm warm-up appears before workout detail.
+- [ ] Confirm exercise illustrations or fallback artwork appear.
+- [ ] Open an exercise guide and return safely.
+- [ ] Start the guided workout player.
+- [ ] Confirm start, pause, resume, next, skip, rest countdown, and finish controls work.
+- [ ] Confirm the player remains scrollable on a small screen.
+- [ ] Finish a workout and confirm Progress updates.
+
+## Premium
+
+- [ ] Open a locked plan or Premium-only feature as a free user.
+- [ ] Confirm Premium opens safely.
+- [ ] Tap the mock Premium unlock.
+- [ ] Restart the app and confirm Premium access persists.
+- [ ] Confirm Premium-only local previews open and the ad placeholder is hidden.
+
+## Calculators And Trackers
+
+- [ ] Test BMI, BMR, daily calorie, water, and ideal-weight estimates with valid values.
+- [ ] Try empty, zero, negative, and non-numeric calculator values; confirm errors appear.
+- [ ] Add and reset water; confirm the daily habit state stays consistent.
+- [ ] Add body measurements and confirm the free limit shows a clear message.
+- [ ] Pick and remove a local progress photo without a permission crash.
+- [ ] Save a fitness test and recovery score.
+
+## Language
+
+- [ ] Change English to Hindi in Global Settings and confirm visible labels refresh.
+- [ ] Restart the app and confirm Hindi remains selected.
+- [ ] Change Hindi back to English and restart.
+- [ ] Change to Arabic and confirm the app does not crash.
+- [ ] Confirm Arabic layout direction updates where supported.
+
+## Settings And Legal
+
+- [ ] Toggle dark mode.
+- [ ] Change metric and imperial display settings.
+- [ ] Open Privacy, Terms, Medical Disclaimer, Data Consent, and Data Safety.
+- [ ] Open Export and confirm a safe Coming Soon page.
+- [ ] Delete all local data, confirm the warning, and verify onboarding opens after deletion.
+
+## Media And Sharing
+
+- [ ] Confirm exercise images never show a blank media area.
+- [ ] Confirm video cards safely show the offline placeholder.
+- [ ] Confirm locked video cards route to Premium.
+- [ ] Complete a workout and open the share card.
+- [ ] Try Share App and workout sharing.
+
+## APK
+
+- [ ] Run `./scripts/verify_app.sh`.
+- [ ] Confirm `app/build/outputs/apk/debug/app-debug.apk` exists.
+- [ ] Install the APK on an Android phone or emulator.

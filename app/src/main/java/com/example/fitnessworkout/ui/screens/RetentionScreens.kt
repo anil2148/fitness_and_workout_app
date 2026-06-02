@@ -35,7 +35,8 @@ import java.time.ZoneId
         item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
         item { Button({
             val parsed = values.map { if (it.isBlank()) 0f else it.toFloatOrNull() }
-            if (parsed[0] == null || parsed[0]!! <= 0f || parsed.any { it == null || it < 0f } || parsed[6]!! > 100f) error = "Enter a positive weight, non-negative measurements, and body fat from 0-100."
+            if (!state.isPremiumUser && state.measurements.size >= 3) error = "Free tracking is full. Unlock Premium to save more measurement history."
+            else if (parsed[0] == null || parsed[0]!! <= 0f || parsed.any { it == null || it < 0f } || parsed[6]!! > 100f) error = "Enter a positive weight, non-negative measurements, and body fat from 0-100."
             else { vm.saveMeasurement(BodyMeasurement(weightKg = parsed[0]!!, waistCm = parsed[1]!!, chestCm = parsed[2]!!, armsCm = parsed[3]!!, thighsCm = parsed[4]!!, hipsCm = parsed[5]!!, bodyFatPercent = parsed[6]!!)); error = null }
         }, Modifier.fillMaxWidth()) { Text("Save measurement") } }
         if (!state.isPremiumUser && state.measurements.size >= 3) item { OutlinedButton(premium, Modifier.fillMaxWidth()) { Text("Unlock full measurement history") } }
@@ -81,7 +82,9 @@ import java.time.ZoneId
         item { OutlinedButton({
             summary?.let {
                 val text = "I completed ${it.workoutTitle}: ${it.durationMinutes} min, ${it.caloriesBurned} kcal, ${it.streak}-day streak."
-                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, "Share workout"))
+                runCatching {
+                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, "Share workout"))
+                }
             }
         }, Modifier.fillMaxWidth(), enabled = summary != null) { Icon(Icons.Default.Share, null); Text(" Share workout") } }
     }
@@ -90,7 +93,7 @@ import java.time.ZoneId
 @Composable fun PrivacyPolicyScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.privacy_policy), stringResource(R.string.privacy_body), back)
 @Composable fun TermsScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.terms), stringResource(R.string.terms_body), back)
 @Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.medical_disclaimer_title), stringResource(R.string.medical_disclaimer), back)
-@Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit) { var confirm by remember { mutableStateOf(false) }; LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button({ confirm = true }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }; if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Delete all local data?") }, text = { Text("This cannot be undone.") }, confirmButton = { TextButton({ vm.deleteAllData(); confirm = false; back() }) { Text("Delete") } }, dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } }) }
+@Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit, deleted: () -> Unit = back) { var confirm by remember { mutableStateOf(false) }; LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button({ confirm = true }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }; if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Delete all local data?") }, text = { Text("This cannot be undone.") }, confirmButton = { TextButton({ confirm = false; vm.deleteAllData(deleted) }) { Text("Delete") } }, dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } }) }
 
 @Composable private fun PhotoCard(label: String, uri: String, modifier: Modifier) = Card(modifier) { Column(Modifier.padding(12.dp)) { Text(label, fontWeight = FontWeight.Bold); AsyncImage(model = uri, contentDescription = label, modifier = Modifier.fillMaxWidth().height(160.dp)); Text(uri.take(32), style = MaterialTheme.typography.bodySmall) } }
 @Composable private fun LegalScreen(title: String, text: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit = {}) = TrackerPage(title, back) { item { Text(text) }; item { Column(content = content) } }

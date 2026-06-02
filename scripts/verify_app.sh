@@ -10,7 +10,10 @@ echo "Cleaning project..."
 ./gradlew clean
 
 echo "Running unit tests..."
-./gradlew testDebugUnitTest || echo "Unit tests failed or unavailable. Check docs/FEATURE_AUDIT.md."
+./gradlew testDebugUnitTest || {
+  echo "Unit tests failed. Check docs/FEATURE_AUDIT.md"
+  exit 1
+}
 
 echo "Building debug APK..."
 ./gradlew assembleDebug

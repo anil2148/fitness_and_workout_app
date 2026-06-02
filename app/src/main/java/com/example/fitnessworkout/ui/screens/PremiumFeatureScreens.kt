@@ -3,6 +3,8 @@ package com.example.fitnessworkout.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
@@ -28,6 +30,7 @@ import com.example.fitnessworkout.utils.Units
     LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { SectionTitle("30-day challenges", "Beginner fitness is free. Goal challenges unlock with Premium.") }
         item { ChallengeProgress(state.challengePlans.count { it.id in state.completedPlanIds }) }
+        if (state.challengePlans.isEmpty()) item { Text(stringResource(R.string.challenge_empty)) }
         items(state.challengePlans) { plan -> val locked = plan.premiumOnly && !state.isPremiumUser; WorkoutPlanCard(plan, { if (locked) premium() else openPlan(plan.id) }, locked = locked) }
     }
 }
@@ -106,5 +109,5 @@ import com.example.fitnessworkout.utils.Units
 @Composable private fun Toggle(label: String, checked: Boolean, change: (Boolean) -> Unit) = Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(label, Modifier.weight(1f)); Switch(checked, change) }
 @Composable private fun Field(value: String, change: (String) -> Unit, label: String, number: Boolean = false) = OutlinedTextField(value, change, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = if (number) KeyboardType.Number else KeyboardType.Text))
 @Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text("$label: $value") }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(it) }, { change(it); open = false }) } } } }
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun FeaturePage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> Column(Modifier.fillMaxSize().padding(padding).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+@OptIn(ExperimentalMaterial3Api::class) @Composable private fun FeaturePage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
 private fun bmiLabel(bmi: Float) = when { bmi < 18.5f -> "Underweight"; bmi < 25f -> "Normal"; bmi < 30f -> "Overweight"; else -> "Obese" }

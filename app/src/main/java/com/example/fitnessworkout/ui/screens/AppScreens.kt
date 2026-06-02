@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -118,6 +120,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var location by remember { mutableStateOf("Home") }
     var injurySafeMode by remember { mutableStateOf(false) }
     var acceptedDisclaimer by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -161,19 +164,35 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
         item {
             Button(
                 onClick = {
-                    viewModel.completeOnboarding(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal, level, minutes, equipment, style,
-                        AppSettings(country = country, language = AppLocaleManager.languageName(languageCode), selectedLanguageCode = languageCode, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location, injurySafeMode = injurySafeMode)
-                    ) { AppLocaleManager.restartUi(context) }
+                    val parsedAge = age.toIntOrNull()
+                    val parsedWeight = weight.toFloatOrNull()
+                    val parsedHeight = height.toFloatOrNull()
+                    if (!acceptedDisclaimer || name.isBlank() || parsedAge == null || parsedAge <= 0 ||
+                        parsedWeight == null || parsedWeight <= 0f || parsedHeight == null || parsedHeight <= 0f
+                    ) {
+                        error = context.getString(R.string.onboarding_validation_error)
+                    } else {
+                        error = null
+                        viewModel.completeOnboarding(name.trim(), parsedAge, parsedWeight, parsedHeight, selectedGoal, level, minutes, equipment, style,
+                            AppSettings(country = country, language = AppLocaleManager.languageName(languageCode), selectedLanguageCode = languageCode, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location, injurySafeMode = injurySafeMode)
+                        ) { AppLocaleManager.restartUi(context) }
+                    }
                 },
-                enabled = acceptedDisclaimer && name.isNotBlank() && (age.toIntOrNull() ?: 0) > 0 && (weight.toFloatOrNull() ?: 0f) > 0f && (height.toFloatOrNull() ?: 0f) > 0f,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) { Text(stringResource(R.string.create_fitness_plan)) }
         }
+        item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable private fun OnboardingChoices(title: String, options: List<String>, selected: String, choose: (String) -> Unit) {
-    Column { Text(title, fontWeight = FontWeight.Bold); Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { options.forEach { FilterChip(selected == it, { choose(it) }, label = { Text(it) }) } } }
+    Column {
+        Text(title, fontWeight = FontWeight.Bold)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            options.forEach { FilterChip(selected == it, { choose(it) }, label = { Text(it) }) }
+        }
+    }
 }
 
 @Composable
@@ -340,6 +359,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
             val completedIds = state.completedPlanIds
             LazyColumn(contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item { ChallengeProgress(state.challengePlans.count { it.id in completedIds }) }
+                if (state.challengePlans.isEmpty()) item { Text(stringResource(R.string.challenge_empty)) }
                 items(state.challengePlans, key = { it.id }) { plan ->
                     val locked = plan.premiumOnly && !state.isPremiumUser
                     WorkoutPlanCard(plan, onClick = { if (locked) onPremium() else onPlan(plan.id) }, locked = locked)
@@ -387,6 +407,7 @@ fun WorkoutDetailScreen(
             contentPadding = PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (plan == null) item { Text(stringResource(R.string.workout_loading)) }
             plan?.let {
                 item {
                     Text(it.description)
@@ -406,6 +427,7 @@ fun WorkoutDetailScreen(
                     }
                 }
             }
+            if (plan != null && exercises.isEmpty()) item { Text(stringResource(R.string.exercises_loading)) }
             itemsIndexed(exercises, key = { _, item -> item.id }) { index, exercise ->
                 ExerciseCard(
                     index = index + 1,
@@ -535,7 +557,16 @@ fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremiu
 @Composable
 fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
-    val user = state.user ?: return
+    val user = state.user
+    if (user == null) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp),
+            contentPadding = PaddingValues(vertical = 18.dp),
+        ) {
+            item { SectionTitle(stringResource(R.string.profile_title), stringResource(R.string.profile_missing)) }
+        }
+        return
+    }
     var showEditor by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     LazyColumn(
@@ -628,6 +659,7 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
     var weight by remember { mutableStateOf(user.weightKg.toString()) }
     var height by remember { mutableStateOf(user.heightCm.toString()) }
     var goal by remember { mutableStateOf(user.fitnessGoal) }
+    var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit profile") },
@@ -639,12 +671,22 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
                         FilterChip(selected = goal == option, onClick = { goal = option }, label = { Text(option) })
                     }
                 }
+                item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), goal) },
-                enabled = name.isNotBlank() && (age.toIntOrNull() ?: 0) > 0 && (weight.toFloatOrNull() ?: 0f) > 0f && (height.toFloatOrNull() ?: 0f) > 0f
+                onClick = {
+                    val parsedAge = age.toIntOrNull()
+                    val parsedWeight = weight.toFloatOrNull()
+                    val parsedHeight = height.toFloatOrNull()
+                    if (name.isBlank() || parsedAge == null || parsedAge <= 0 || parsedWeight == null || parsedWeight <= 0f || parsedHeight == null || parsedHeight <= 0f) {
+                        error = "Enter a name and positive numbers for age, weight, and height."
+                    } else {
+                        error = null
+                        onSave(name.trim(), parsedAge, parsedWeight, parsedHeight, goal)
+                    }
+                },
             ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }

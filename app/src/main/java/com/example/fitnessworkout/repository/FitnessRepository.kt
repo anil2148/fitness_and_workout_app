@@ -125,8 +125,12 @@ class FitnessRepository(private val dao: FitnessDao, private val appPreferences:
             dao.upsertDailyHabit(habit.copy(waterGoalCompleted = true))
         }
     }
-    suspend fun resetWater(current: WaterLog?) =
-        dao.upsertWater((current ?: WaterLog(LocalDate.now().toString())).copy(amountMl = 0))
+    suspend fun resetWater(current: WaterLog?) {
+        val log = (current ?: WaterLog(LocalDate.now().toString())).copy(amountMl = 0)
+        dao.upsertWater(log)
+        val habit = dao.getDailyHabit(log.date) ?: DailyHabit(log.date)
+        dao.upsertDailyHabit(habit.copy(waterGoalCompleted = false))
+    }
     suspend fun saveHealthMetric(metric: HealthMetric) = dao.upsertHealthMetric(metric)
     suspend fun saveReminders(settings: ReminderSettings) = dao.upsertReminders(settings)
     suspend fun saveCustomPlan(plan: CustomWorkoutPlan) = dao.insertCustomPlan(plan)

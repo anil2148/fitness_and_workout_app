@@ -83,6 +83,7 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Un
         Button({ workout = vm.quickWorkout(minutes, filters) }, Modifier.fillMaxWidth()) { Text("Generate quick workout") }
         workout?.let { generated ->
             Text("${generated.durationMinutes} minutes | ${generated.estimatedCalories} kcal", fontWeight = FontWeight.Bold)
+            if (generated.exercises.isEmpty()) Text("Exercise library is loading. Try generating the workout again in a moment.")
             generated.exercises.forEach { exercise ->
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -92,7 +93,7 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Un
                 }
             }
             generated.exercises.firstOrNull()?.let { ExerciseVideoPlayer(it, state.isPremiumUser, premium) }
-            Button({ vm.completeQuickWorkout(generated); back() }, Modifier.fillMaxWidth()) { Text("Complete quick workout") }
+            Button({ vm.completeQuickWorkout(generated); back() }, Modifier.fillMaxWidth(), enabled = generated.exercises.isNotEmpty()) { Text("Complete quick workout") }
         }
     }
 }
@@ -218,10 +219,12 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
     LaunchPage("Share the app", back) {
         Text("Invite a friend to build a stronger routine.")
         Button({
-            context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "Try Fitness and Workout App: https://play.google.com/store/apps/details?id=com.example.fitnessworkout")
-            }, "Share app"))
+            runCatching {
+                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "Try Fitness and Workout App: https://play.google.com/store/apps/details?id=com.example.fitnessworkout")
+                }, "Share app"))
+            }
         }, Modifier.fillMaxWidth()) { Icon(Icons.Default.Share, null); Text(" Share app") }
     }
 }

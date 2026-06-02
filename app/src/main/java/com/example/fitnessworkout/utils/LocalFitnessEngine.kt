@@ -19,6 +19,7 @@ import java.time.ZoneId
 
 object LocalFitnessEngine {
     fun quickWorkout(exercises: List<Exercise>, minutes: Int, filters: Set<String>): QuickWorkout {
+        val safeMinutes = minutes.coerceIn(5, 15)
         val matches = exercises.distinctBy { it.name }.filter { exercise ->
             ("No equipment" !in filters || exercise.equipment.equals("No equipment", ignoreCase = true)) &&
                 ("Low impact" !in filters || exercise.isLowImpact) &&
@@ -28,13 +29,13 @@ object LocalFitnessEngine {
         }
         val fallback = exercises.distinctBy { it.name }.filter { it.isNoJumping }
         val pool = (matches.ifEmpty { fallback }).ifEmpty { exercises.distinctBy { it.name } }
-        val count = (minutes / 3).coerceAtLeast(2)
+        val count = (safeMinutes / 3).coerceAtLeast(2)
         val selected = pool.take(count)
         return QuickWorkout(
-            durationMinutes = minutes,
+            durationMinutes = safeMinutes,
             filters = filters,
             exerciseNames = selected.map { it.name },
-            estimatedCalories = selected.sumOf { it.caloriesPerMinute } * minutes / selected.size.coerceAtLeast(1),
+            estimatedCalories = selected.sumOf { it.caloriesPerMinute } * safeMinutes / selected.size.coerceAtLeast(1),
             exercises = selected,
         )
     }

@@ -228,7 +228,10 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             repository.saveFitnessTest(FitnessTestResult(pushUps = pushUps, plankSeconds = plank, squats = squats, restingHeartRate = heartRate, score = score))
         }
     }
-    fun deleteAllData() = viewModelScope.launch { repository.deleteAllData() }
+    fun deleteAllData(onDeleted: (() -> Unit)? = null) = viewModelScope.launch {
+        repository.deleteAllData()
+        onDeleted?.invoke()
+    }
     fun saveSettings(item: AppSettings, onSaved: (() -> Unit)? = null) = viewModelScope.launch {
         repository.saveSettings(item)
         onSaved?.invoke()

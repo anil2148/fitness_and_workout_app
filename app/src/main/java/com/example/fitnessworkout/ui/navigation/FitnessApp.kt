@@ -181,7 +181,17 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("terms") { TermsScreen { navController.popBackStack() } }
             composable("medical") { MedicalDisclaimerScreen { navController.popBackStack() } }
             composable("feedback") { AppFeedbackScreen(viewModel) { navController.popBackStack() } }
-            composable("delete-data") { DeleteAllDataScreen(viewModel) { navController.popBackStack() } }
+            composable("delete-data") {
+                DeleteAllDataScreen(
+                    vm = viewModel,
+                    back = { navController.popBackStack() },
+                    deleted = {
+                        navController.navigate("onboarding") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable("settings") { SettingsScreen(viewModel, { navController.popBackStack() }, { navController.navigate(it) }) }
             composable("community") { CommunityScreen(viewModel) { navController.popBackStack() } }
             composable("trainer") { TrainerModeScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
