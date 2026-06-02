@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -131,7 +132,7 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                     running = false
                     vm.completeSelectedWorkout()
                     finished()
-                }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
+                }, Modifier.fillMaxWidth().testTag("workout_finish_button")) { Text(stringResource(R.string.finish_workout)) }
                 exercises.getOrNull(index + 1)?.let { next ->
                     Text(stringResource(R.string.next_exercise), fontWeight = FontWeight.Bold)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {

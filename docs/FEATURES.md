@@ -4,6 +4,14 @@ This document is for future developers working on the `fitness_and_workout_app` 
 
 > Important: This documentation describes the product direction and expected behavior. Some advanced features may currently be implemented as placeholders or `Coming Soon` screens until they are fully stabilized.
 
+## QA and Localization Guardrails
+
+- English, Hindi, Spanish, French, and Arabic resource packs are checked for matching keys by `scripts/verify_strings.py`.
+- Likely direct Compose literals are reported by `scripts/scan_hardcoded_strings.py`.
+- Language, country, currency, and units are stored separately so Hindi with USD and English with INR remain valid combinations.
+- Premium preview prices are numeric regional values formatted at runtime, never final release prices.
+- Promo Code, Referral Code, and Affiliate Store entries route to stable Coming Soon pages until verified integrations exist.
+
 ---
 
 ## 1. App Overview

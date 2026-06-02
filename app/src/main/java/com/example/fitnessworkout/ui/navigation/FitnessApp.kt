@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -81,6 +82,7 @@ import com.example.fitnessworkout.ui.screens.FitnessReportsScreen
 import com.example.fitnessworkout.ui.screens.FavoriteWorkoutsScreen
 import com.example.fitnessworkout.ui.screens.GuidedWorkoutPlayerScreen
 import com.example.fitnessworkout.ui.screens.ExerciseDetailScreen
+import com.example.fitnessworkout.ui.screens.ComingSoonScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 import com.example.fitnessworkout.R
@@ -204,6 +206,9 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("whats-new") { WhatsNewScreen { navController.popBackStack() } }
             composable("bug-report") { BugReportScreen { navController.popBackStack() } }
             composable("regional-pricing") { MonetizationScreen { navController.popBackStack() } }
+            composable("promo-code") { ComingSoonScreen(stringResource(R.string.promo_code), stringResource(R.string.promo_code_body), { navController.popBackStack() }) }
+            composable("referral-code") { ComingSoonScreen(stringResource(R.string.referral_code), stringResource(R.string.referral_code_body), { navController.popBackStack() }) }
+            composable("affiliate-store") { ComingSoonScreen(stringResource(R.string.affiliate_store), stringResource(R.string.affiliate_store_body), { navController.popBackStack() }) }
             composable("quick-workout") { QuickWorkoutScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
             composable("fitness-score") { FitnessScoreScreen(viewModel) { navController.popBackStack() } }
             composable("ai-workout") { AIWorkoutCoachScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
@@ -232,6 +237,7 @@ private fun FitnessBottomNavigation(navController: NavHostController, currentRou
         bottomDestinations.forEach { destination ->
             val label = stringResource(destination.label)
             NavigationBarItem(
+                modifier = Modifier.testTag("bottom_nav_${destination.route}"),
                 selected = currentRoute == destination.route,
                 onClick = {
                     navController.navigate(destination.route) {

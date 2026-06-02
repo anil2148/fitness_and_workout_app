@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -179,7 +180,7 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
     Text(stringResource(R.string.warm_up_body), fontWeight = FontWeight.Bold)
     listOf(R.string.warm_up_march, R.string.warm_up_arms, R.string.warm_up_hips, R.string.warm_up_mobility).forEach { Text("• ${stringResource(it)}") }
     Text(stringResource(R.string.stop_safety_warning), color = MaterialTheme.colorScheme.error)
-    Button(start, Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_workout)) }
+    Button(start, Modifier.fillMaxWidth().testTag("workout_start_button")) { Text(stringResource(R.string.start_workout)) }
 }
 
 @Composable fun CoolDownScreen(done: () -> Unit) = LaunchPage(stringResource(R.string.cool_down), done) {

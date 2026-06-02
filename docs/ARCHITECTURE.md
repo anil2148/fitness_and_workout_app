@@ -6,6 +6,7 @@ Use this document together with:
 
 - `docs/FEATURES.md`
 - `docs/FEATURE_AUDIT.md`
+- `docs/LOCALIZATION_AUDIT.md`
 - `docs/MANUAL_QA_CHECKLIST.md`
 - `README.md`
 
@@ -298,6 +299,20 @@ Rules:
 - Every referenced route must exist in the NavHost.
 - Every visible button must navigate safely.
 - Incomplete advanced features should navigate to `ComingSoonScreen`.
+
+---
+
+## 7. QA Guardrails
+
+The repository includes:
+
+- `scripts/verify_strings.py` for supported-locale key parity.
+- `scripts/scan_hardcoded_strings.py` for likely direct Compose literals.
+- `scripts/verify_app.sh` for string checks, JVM tests, APK assembly, and APK existence.
+- JVM tests for region mapping, currency independence, Premium previews, calculators, conversions, streaks, locks, recommendation rules, validation, locale fallback, and media fallback.
+- Compose test tags for the most important onboarding, navigation, Settings, Premium, and workout actions.
+
+Instrumented Compose smoke tests remain a future addition because the current MVP does not configure an Android test runner. Manual emulator coverage is tracked in `docs/MANUAL_QA_CHECKLIST.md`.
 - Avoid hardcoded route strings scattered across UI files.
 - Validate nav arguments.
 

@@ -26,6 +26,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Global onboarding and settings for country, persisted runtime language, metric or imperial units, diet, and workout location
 - Runtime language switching for English, Hindi, Spanish, French, and Arabic with DataStore persistence, immediate UI refresh, safe fallback, and RTL manifest support
 - Regional pricing display models for USD, INR, EUR, GBP, and BRL
+- Independent country, currency, language, and unit settings with CAD, AUD, AED, and SAR support
 - Offline community feed, trainer mode, AI form-check, recovery score, calendar, and specialized routine placeholders
 - Desk-worker, Indian fitness, low-impact, no-jumping, and apartment-friendly routine ideas
 - Material 3 UI with a responsive scrollable layout, rounded cards, icons, and simple animations
@@ -52,6 +53,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Exercise guide screen with large illustration, video placeholder, training details, safety tips, mistakes, and start action
 - Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
 - Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
+- Localization and currency audit in `docs/LOCALIZATION_AUDIT.md`
 - Manual Android-phone regression checklist in `docs/MANUAL_QA_CHECKLIST.md`
 
 ## Tech Stack
@@ -100,6 +102,7 @@ Workout plans are inserted into the local Room database the first time the app l
 - The selected locale code persists in DataStore and is applied before Compose loads.
 - Changing language in Settings saves the new locale and safely recreates the activity so visible text updates immediately.
 - Supported units: metric and imperial
+- Supported countries: United States, India, United Kingdom, Canada, Australia, Germany, France, Spain, Brazil, United Arab Emirates, and Saudi Arabia
 - Add translations in `app/src/main/res/values-<locale>/strings.xml`
 - Regional prices are display models only. Replace them with Google Play Billing product details before release.
 - Premium pricing is mock-only until Google Play Billing is integrated. Preview values live in `MockPremiumPlans.kt`; see `docs/MONETIZATION.md`.
@@ -126,11 +129,13 @@ Run the Linux/Codespaces-friendly verification script:
 ./scripts/verify_app.sh
 ```
 
-It prints the Java version, cleans the project, runs JVM unit tests, stops immediately if a test fails, builds the debug APK, and confirms that the APK exists.
+It prints the Java version, verifies localized key parity, reports likely direct Compose literals, cleans the project, runs JVM unit tests, stops immediately if a test fails, builds the debug APK, and confirms that the APK exists.
 
 To run the required checks individually:
 
 ```bash
+python3 scripts/verify_strings.py
+python3 scripts/scan_hardcoded_strings.py
 ./gradlew clean
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug

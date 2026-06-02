@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -203,7 +204,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
                         ) { AppLocaleManager.restartUi(context) }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+                modifier = Modifier.fillMaxWidth().height(52.dp).testTag("onboarding_save_button")
             ) { Text(stringResource(R.string.create_fitness_plan)) }
         }
         item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -226,7 +227,7 @@ private fun ProfileFields(
     onName: (String) -> Unit, onAge: (String) -> Unit, onWeight: (String) -> Unit, onHeight: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(name, onName, label = { Text(stringResource(R.string.name)) }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(name, onName, label = { Text(stringResource(R.string.name)) }, modifier = Modifier.fillMaxWidth().testTag("onboarding_name_input"))
         OutlinedTextField(age, onAge, label = { Text(stringResource(R.string.age)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
         OutlinedTextField(weight, onWeight, label = { Text(stringResource(R.string.weight_kg)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
         OutlinedTextField(height, onHeight, label = { Text(stringResource(R.string.height_cm)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
@@ -440,7 +441,7 @@ fun WorkoutDetailScreen(
                     Text(stringResource(R.string.workout_summary, it.durationMinutes, it.estimatedCalories), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
                 item {
-                    Button(onStartPlayer, Modifier.fillMaxWidth()) {
+                    Button(onStartPlayer, Modifier.fillMaxWidth().testTag("workout_start_button")) {
                         Icon(Icons.Default.PlayArrow, null)
                         Text(" ${stringResource(R.string.start_guided_workout)}")
                     }
@@ -755,13 +756,20 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
                 SubscriptionPlanCard(plan, state.settings.selectedLanguageCode, onClick = { selectPlan(plan) })
             }
             item { Text(stringResource(R.string.referral_and_promo), style = MaterialTheme.typography.bodySmall) }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton({ onNavigate("promo-code") }, Modifier.weight(1f)) { Text(stringResource(R.string.promo_code)) }
+                    OutlinedButton({ onNavigate("referral-code") }, Modifier.weight(1f)) { Text(stringResource(R.string.referral_code)) }
+                }
+            }
+            item { OutlinedButton({ onNavigate("affiliate-store") }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.affiliate_store)) } }
             item { Text(stringResource(R.string.free_vs_premium), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             items(premiumComparison) { feature -> Text(stringResource(feature)) }
             item { Text(stringResource(R.string.premium_testimonial)) }
             item { Text(stringResource(R.string.premium_faq)) }
             item {
                 // TODO: Replace the local toggle with Google Play Billing purchase verification.
-                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth().testTag("premium_unlock_button")) {
                     Text(stringResource(R.string.enable_mock_plan, selectedPlan?.let { premiumTitle(it) } ?: stringResource(R.string.premium_title)))
                 }
             }

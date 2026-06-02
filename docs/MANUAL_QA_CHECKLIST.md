@@ -17,6 +17,16 @@ Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` 
 - [ ] Confirm top-bar back buttons return safely.
 - [ ] Open every Profile and Settings link; confirm a working page or safe Coming Soon page appears.
 
+## Full Page Inventory
+
+- [ ] Core: Splash, Onboarding, Home, Workouts, Workout Detail, Workout Player, Workout Summary share card, Progress, Profile, Settings, and Premium.
+- [ ] Workout: Exercise Detail, Challenges, challenge detail flow, Custom Workout Plan, Quick Workout, Recommended for You, Specialized Routines, Indian fitness content, and injury-safe Settings filter.
+- [ ] Health: calculators for BMI, BMR, daily calories, and water intake; Water Tracker, Body Measurements, Progress Photos, Fitness Test, Fitness Score, Recovery Score, Daily Habits, Weekly Report, and Monthly Report.
+- [ ] Monetization: Premium Plans, Promo Code, Referral Code, Affiliate Store, rewarded-ad placeholder, and disabled Restore Purchase placeholder.
+- [ ] Advanced: AI Workout Coach, AI Meal Suggestions, AI Progress Analysis, AI Motivation Chat, PDF preview, Community, Trainer Mode, AI Form Check, Smart Calendar, Reminders, Rate App, Share App, Feedback, Bug Report, What's New, Contact Support, and About.
+- [ ] Legal: Privacy Policy, Terms, Medical Disclaimer, Data Consent, Delete My Data, Export My Data, and Data Safety.
+- [ ] Confirm every unavailable integration shows Coming Soon copy or a disabled placeholder and every top-bar back button returns safely.
+
 ## Workout Flow
 
 - [ ] Open Workouts and select a plan.
@@ -35,6 +45,8 @@ Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` 
 - [ ] Tap the mock Premium unlock.
 - [ ] Restart the app and confirm Premium access persists.
 - [ ] Confirm Premium-only local previews open and the ad placeholder is hidden.
+- [ ] Open Promo Code, Referral Code, and Affiliate Store; confirm each opens a safe Coming Soon page.
+- [ ] Confirm Restore Purchase remains visibly disabled and does not pretend to complete a purchase.
 
 ## Calculators And Trackers
 
@@ -82,6 +94,8 @@ Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` 
 
 ## APK
 
+- [ ] Run `python3 scripts/verify_strings.py`.
+- [ ] Run `python3 scripts/scan_hardcoded_strings.py`.
 - [ ] Run `./scripts/verify_app.sh`.
 - [ ] Confirm `app/build/outputs/apk/debug/app-debug.apk` exists.
 - [ ] Install the APK on an Android phone or emulator.

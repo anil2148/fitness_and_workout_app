@@ -8,6 +8,8 @@ data class CountryOption(
 )
 
 object RegionSettings {
+    val supportedUnitSystems = listOf("Metric", "Imperial")
+
     val supportedCountries = listOf(
         CountryOption("US", "United States", "USD", "Imperial"),
         CountryOption("IN", "India", "INR", "Metric"),
@@ -37,5 +39,13 @@ object RegionSettings {
 
     fun currencyForCountry(codeOrLabel: String): String = country(codeOrLabel).currencyCode
 
-    fun unitSystemForCountry(codeOrLabel: String): String = country(codeOrLabel).unitSystem
+    fun unitSystemForCountry(codeOrLabel: String): String =
+        supportedCountries.firstOrNull {
+            it.code.equals(codeOrLabel, ignoreCase = true) ||
+                it.label.equals(codeOrLabel, ignoreCase = true)
+        }?.unitSystem ?: "Metric"
+
+    fun safeUnitSystem(unitSystem: String, countryCodeOrLabel: String): String =
+        supportedUnitSystems.firstOrNull { it.equals(unitSystem, ignoreCase = true) }
+            ?: unitSystemForCountry(countryCodeOrLabel)
 }

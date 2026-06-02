@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,9 +28,9 @@ import com.example.fitnessworkout.ui.components.localizedOption
 
 @Composable fun SettingsScreen(vm: FitnessViewModel, back: () -> Unit, navigate: (String) -> Unit) {
     val context = LocalContext.current
-    val state by vm.uiState.collectAsState(); var settings by remember(state.settings) { mutableStateOf(state.settings) }
+    val state by vm.uiState.collectAsState(); var settings by remember(state.settings) { mutableStateOf(state.settings) }; var settingsSaved by remember { mutableStateOf(false) }
     GlobalPage(stringResource(R.string.settings_title), back) {
-        Choice(stringResource(R.string.country_region), settings.country, RegionSettings.supportedCountries.map { it.label }) {
+        Choice(stringResource(R.string.country_region), settings.country, RegionSettings.supportedCountries.map { it.label }, Modifier.testTag("settings_country_selector")) {
             val selected = RegionSettings.country(it)
             settings = settings.copy(
                 country = selected.label,
@@ -44,20 +45,24 @@ import com.example.fitnessworkout.ui.components.localizedOption
             settings = updated
             vm.saveSettings(updated) { AppLocaleManager.restartUi(context) }
         }
-        Choice(stringResource(R.string.currency), settings.selectedCurrencyCode, RegionSettings.supportedCurrencyCodes) { settings = settings.copy(selectedCurrencyCode = RegionSettings.safeCurrencyCode(it)) }
+        Choice(stringResource(R.string.currency), settings.selectedCurrencyCode, RegionSettings.supportedCurrencyCodes, Modifier.testTag("settings_currency_selector")) { settings = settings.copy(selectedCurrencyCode = RegionSettings.safeCurrencyCode(it)) }
         Choice(stringResource(R.string.unit_system), settings.selectedUnitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(selectedUnitSystem = it, unitSystem = it) }
         Choice(stringResource(R.string.diet_preference), settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
         Choice(stringResource(R.string.workout_location), settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
         Toggle(stringResource(R.string.prefer_injury_safe), settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
         Toggle(stringResource(R.string.analytics_consent), settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
         Toggle(stringResource(R.string.cloud_sync_consent), settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
-        Button({ vm.saveSettings(settings) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
+        Toggle(stringResource(R.string.dark_mode), state.user?.darkMode ?: false, vm::setDarkMode)
+        Button({ vm.saveSettings(settings); settingsSaved = true }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
+        if (settingsSaved) Text(stringResource(R.string.settings_saved), color = MaterialTheme.colorScheme.primary)
         Text("${if (state.isPremiumUser) stringResource(R.string.premium_member) else stringResource(R.string.free_member)} • ${stringResource(R.string.app_version)}")
         listOf("community" to R.string.community, "trainer" to R.string.trainer_mode, "form-check" to R.string.ai_form_check, "specialized" to R.string.specialized_routines,
             "calendar" to R.string.smart_calendar, "recovery" to R.string.recovery_score, "export-data" to R.string.export_my_data, "consent" to R.string.data_consent,
             "whats-new" to R.string.whats_new, "bug-report" to R.string.bug_report, "daily-habits" to R.string.daily_habits,
             "fitness-reports" to R.string.reports, "favorites" to R.string.favorite_workouts, "privacy" to R.string.privacy_policy,
-            "terms" to R.string.terms, "medical" to R.string.medical_disclaimer_title, "delete-data" to R.string.delete_all_data).forEach { (route, label) ->
+            "terms" to R.string.terms, "medical" to R.string.medical_disclaimer_title, "delete-data" to R.string.delete_all_data,
+            "reminders" to R.string.daily_reminders, "about" to R.string.about_app, "feedback" to R.string.feedback,
+            "contact-support" to R.string.contact_support, "data-safety" to R.string.data_safety, "share-app" to R.string.share_app).forEach { (route, label) ->
             OutlinedButton({ navigate(route) }, Modifier.fillMaxWidth()) { Text(stringResource(label)) }
         }
     }
@@ -78,7 +83,7 @@ import com.example.fitnessworkout.ui.components.localizedOption
 @Composable private fun PremiumPlaceholder(vm: FitnessViewModel, title: String, text: String, back: () -> Unit, premium: () -> Unit) { val state by vm.uiState.collectAsState(); if (!state.isPremiumUser) GlobalPage(title, back) { Icon(Icons.Default.Lock, null); Text(stringResource(R.string.premium_feature)); Button(premium) { Text(stringResource(R.string.view_premium)) } } else ComingSoonScreen(title, text, back) }
 @Composable fun ComingSoonScreen(title: String, description: String, back: () -> Unit, premiumLocked: Boolean = false) = GlobalPage(title, back) { if (premiumLocked) Icon(Icons.Default.Lock, null); Text(stringResource(R.string.coming_soon), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(description) }
 @Composable private fun Toggle(label: String, checked: Boolean, change: (Boolean) -> Unit) = Row(Modifier.fillMaxWidth()) { Text(label, Modifier.weight(1f)); Switch(checked, change) }
-@Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.label_value, label, localizedOption(value))) }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(localizedOption(it)) }, { change(it); open = false }) } } } }
-@Composable private fun LanguageChoice(selectedCode: String, change: (String) -> Unit) = Choice(stringResource(R.string.language), AppLocaleManager.languageName(selectedCode), AppLocaleManager.supportedLanguages.map { it.label }) { change(AppLocaleManager.languageCode(it)) }
+@Composable private fun Choice(label: String, value: String, options: List<String>, modifier: Modifier = Modifier, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, modifier.fillMaxWidth()) { Text(stringResource(R.string.label_value, label, localizedOption(value))) }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(localizedOption(it)) }, { change(it); open = false }) } } } }
+@Composable private fun LanguageChoice(selectedCode: String, change: (String) -> Unit) = Choice(stringResource(R.string.language), AppLocaleManager.languageName(selectedCode), AppLocaleManager.supportedLanguages.map { it.label }, Modifier.testTag("settings_language_selector")) { change(AppLocaleManager.languageCode(it)) }
 @Composable private fun Num(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
 @OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }

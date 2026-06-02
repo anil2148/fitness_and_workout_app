@@ -153,9 +153,12 @@ class FitnessRepository(private val dao: FitnessDao, private val appPreferences:
     }
     suspend fun saveSettings(item: AppSettings) {
         val country = RegionSettings.country(item.selectedCountryCode.ifBlank { item.country })
-        val unitSystem = item.selectedUnitSystem.ifBlank { RegionSettings.unitSystemForCountry(country.code) }
+        val languageCode = AppLocaleManager.safeLanguageCode(item.selectedLanguageCode)
+        val unitSystem = RegionSettings.safeUnitSystem(item.selectedUnitSystem, country.code)
         val normalized = item.copy(
             country = country.label,
+            language = AppLocaleManager.languageName(languageCode),
+            selectedLanguageCode = languageCode,
             selectedCountryCode = country.code,
             selectedCurrencyCode = RegionSettings.safeCurrencyCode(item.selectedCurrencyCode),
             selectedUnitSystem = unitSystem,

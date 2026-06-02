@@ -24,12 +24,12 @@ object MockPremiumPlans {
         "USD" to RegionalAmounts(2.99, 19.99, 29.99, 0.99, 9.99, 14.99),
         "INR" to RegionalAmounts(99.0, 999.0, 1499.0, 29.0, 499.0, 749.0),
         "EUR" to RegionalAmounts(2.99, 19.99, 29.99, 0.99, 9.99, 14.99),
-        "GBP" to RegionalAmounts(2.49, 17.99, 26.99, 0.79, 8.99, 13.49),
+        "GBP" to RegionalAmounts(2.49, 17.99, 24.99, 0.79, 8.99, 13.49),
         "CAD" to RegionalAmounts(3.99, 26.99, 39.99, 1.29, 13.49, 19.99),
         "AUD" to RegionalAmounts(4.49, 29.99, 44.99, 1.49, 14.99, 22.49),
-        "BRL" to RegionalAmounts(14.90, 99.90, 149.90, 4.90, 49.90, 74.90),
-        "AED" to RegionalAmounts(10.99, 73.49, 109.99, 3.69, 36.49, 54.99),
-        "SAR" to RegionalAmounts(11.19, 74.99, 112.49, 3.69, 37.49, 56.19),
+        "BRL" to RegionalAmounts(9.99, 79.99, 119.99, 3.49, 39.99, 59.99),
+        "AED" to RegionalAmounts(10.99, 74.99, 109.99, 3.69, 37.49, 54.99),
+        "SAR" to RegionalAmounts(10.99, 74.99, 109.99, 3.69, 37.49, 54.99),
     )
 
     fun subscriptionPlans(currencyCode: String = "USD"): List<SubscriptionPlanUi> {
