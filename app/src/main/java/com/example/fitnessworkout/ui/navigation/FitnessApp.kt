@@ -1,0 +1,100 @@
+package com.example.fitnessworkout.ui.navigation
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.fitnessworkout.ui.screens.HomeScreen
+import com.example.fitnessworkout.ui.screens.OnboardingScreen
+import com.example.fitnessworkout.ui.screens.PremiumScreen
+import com.example.fitnessworkout.ui.screens.ProfileScreen
+import com.example.fitnessworkout.ui.screens.ProgressScreen
+import com.example.fitnessworkout.ui.screens.WorkoutDetailScreen
+import com.example.fitnessworkout.ui.screens.WorkoutsScreen
+import com.example.fitnessworkout.viewmodel.FitnessViewModel
+
+private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+
+private val bottomDestinations = listOf(
+    BottomDestination("home", "Home", Icons.Default.Home),
+    BottomDestination("workouts", "Workouts", Icons.Default.FitnessCenter),
+    BottomDestination("progress", "Progress", Icons.Default.BarChart),
+    BottomDestination("profile", "Profile", Icons.Default.Person)
+)
+
+@Composable
+fun FitnessApp(viewModel: FitnessViewModel) {
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val showBottomBar = currentRoute in bottomDestinations.map { it.route }
+
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar) FitnessBottomNavigation(navController, currentRoute)
+        }
+    ) { padding ->
+        NavHost(navController = navController, startDestination = "onboarding", modifier = Modifier) {
+            composable("onboarding") {
+                OnboardingScreen(viewModel) {
+                    navController.navigate("home") { popUpTo("onboarding") { inclusive = true } }
+                }
+            }
+            composable("home") {
+                HomeScreen(viewModel, padding, onNavigate = { navController.navigate(it) }, onPlan = { openPlan(navController, viewModel, it) })
+            }
+            composable("workouts") {
+                WorkoutsScreen(viewModel, padding, onPlan = { openPlan(navController, viewModel, it) })
+            }
+            composable("progress") { ProgressScreen(viewModel, padding) }
+            composable("profile") { ProfileScreen(viewModel, padding, onPremium = { navController.navigate("premium") }) }
+            composable("detail/{planId}") { entry ->
+                val planId = entry.arguments?.getString("planId")?.toIntOrNull()
+                LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
+                WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() })
+            }
+            composable("premium") { PremiumScreen(onBack = { navController.popBackStack() }) }
+        }
+    }
+}
+
+@Composable
+private fun FitnessBottomNavigation(navController: NavHostController, currentRoute: String?) {
+    NavigationBar {
+        bottomDestinations.forEach { destination ->
+            NavigationBarItem(
+                selected = currentRoute == destination.route,
+                onClick = {
+                    navController.navigate(destination.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = { Icon(destination.icon, destination.label) },
+                label = { Text(destination.label) }
+            )
+        }
+    }
+}
+
+private fun openPlan(navController: NavHostController, viewModel: FitnessViewModel, planId: Int) {
+    viewModel.selectPlan(planId)
+    navController.navigate("detail/$planId")
+}
