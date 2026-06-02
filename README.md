@@ -43,6 +43,9 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
 - Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
 - GitHub Actions debug build that uploads the APK as `fitness-workout-debug-apk`
+- Guided offline workout player with start, pause, resume, next, finish, progress, and safe-exit controls
+- Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
+- Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
 
 ## Tech Stack
 
@@ -104,6 +107,16 @@ Install Android SDK 35 and run:
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
+## Verify the App
+
+Run the Linux/Codespaces-friendly verification script:
+
+```bash
+./scripts/verify_app.sh
+```
+
+It prints the Java version, cleans the project, runs JVM unit tests, builds the debug APK, and confirms that the APK exists.
+
 ## Download APK from GitHub Actions
 
 1. Open the repository on GitHub and select the **Actions** tab.
@@ -119,6 +132,24 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 4. Tap **Install**.
 
 The APK is a debug build for testing. Use a signed release bundle before Play Store submission.
+
+## Working Placeholders
+
+The app remains offline-first. Google Play Billing, AdMob, external AI APIs, real exercise videos, PDF export, Firebase login, cloud backup, push notifications, Health Connect, Wear OS, and ML pose detection are intentionally shown as stable Coming Soon placeholders.
+
+## Known Limitations
+
+- Runtime locale switching is not wired yet, although language preference and translation resource packs are present.
+- Profile and calculator input fields use metric entry values; selected units affect supported displays.
+- Progress photos use local picker URIs and are not uploaded or cloud backed up.
+- The generated APK is a debug build. Create a signed release bundle before Play Store submission.
+
+## Troubleshooting
+
+- Confirm Java 17 is active with `java -version`.
+- Install Android SDK platform 35 if Gradle reports a missing SDK.
+- Set `ANDROID_HOME` or create `local.properties` with your Android SDK path when building outside Android Studio.
+- Run `./gradlew clean` before rebuilding after SDK or dependency changes.
 
 ## Future Integrations
 

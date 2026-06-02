@@ -31,6 +31,7 @@ import com.example.fitnessworkout.data.model.FavoriteWorkout
 import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import com.example.fitnessworkout.repository.FitnessRepository
 import com.example.fitnessworkout.utils.LocalFitnessEngine
+import com.example.fitnessworkout.utils.FitnessCalculations
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -140,7 +141,7 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             history = history,
             totalCalories = history.sumOf { it.caloriesBurned },
             weeklyCount = history.count { isCurrentWeek(it.completedAt) },
-            streak = calculateStreak(history),
+            streak = FitnessCalculations.streak(history.map { it.completedAt }),
             quote = SampleData.quotes[LocalDate.now().dayOfYear % SampleData.quotes.size],
             isPremiumUser = premium?.isPremiumUser ?: false,
             water = water ?: WaterLog(LocalDate.now().toString()),
@@ -203,31 +204,37 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
     fun calculateHealth(weightKg: Float, heightCm: Float, age: Int, activityMultiplier: Float = 1.375f) {
         if (weightKg <= 0 || heightCm <= 0 || age <= 0) return
         val meters = heightCm / 100f
-        val bmi = weightKg / (meters * meters)
-        val bmr = 10f * weightKg + 6.25f * heightCm - 5f * age + 5f
+        val bmi = FitnessCalculations.bmi(weightKg, heightCm)
+        val bmr = FitnessCalculations.bmr(weightKg, heightCm, age)
         viewModelScope.launch {
-            repository.saveHealthMetric(HealthMetric(bmi = bmi, bmr = bmr, calorieNeeds = bmr * activityMultiplier,
+            repository.saveHealthMetric(HealthMetric(bmi = bmi, bmr = bmr, calorieNeeds = FitnessCalculations.calorieNeeds(bmr, activityMultiplier),
                 waterMl = (weightKg * 35).toInt(), idealWeightMin = 18.5f * meters * meters, idealWeightMax = 24.9f * meters * meters))
         }
     }
     fun generateCustomPlan(goal: String, level: String, minutes: Int, equipment: String, bodyFocus: String = "Full Body") =
         viewModelScope.launch { repository.saveCustomPlan(CustomWorkoutPlan(goal = goal, level = level, availableMinutes = minutes, equipment = equipment, generatedTitle = "$minutes-min $bodyFocus $goal plan", bodyFocus = bodyFocus)) }
     fun saveMeasurement(item: BodyMeasurement) = viewModelScope.launch {
-        if (uiState.value.isPremiumUser || uiState.value.measurements.size < 3) repository.saveMeasurement(item)
+        val values = listOf(item.weightKg, item.waistCm, item.chestCm, item.armsCm, item.thighsCm, item.hipsCm, item.bodyFatPercent)
+        if (item.weightKg > 0f && values.all { it >= 0f } && item.bodyFatPercent <= 100f &&
+            (uiState.value.isPremiumUser || uiState.value.measurements.size < 3)) repository.saveMeasurement(item)
     }
     fun savePhoto(uri: String) = viewModelScope.launch {
         if (uiState.value.isPremiumUser || uiState.value.photos.size < 2) repository.savePhoto(ProgressPhoto(imageUri = uri))
     }
     fun deletePhoto(id: Int) = viewModelScope.launch { repository.deletePhoto(id) }
     fun saveFitnessTest(pushUps: Int, plank: Int, squats: Int, heartRate: Int) = viewModelScope.launch {
-        val score = pushUps + plank / 10 + squats - (heartRate - 60).coerceAtLeast(0) / 2
-        repository.saveFitnessTest(FitnessTestResult(pushUps = pushUps, plankSeconds = plank, squats = squats, restingHeartRate = heartRate, score = score))
+        if (pushUps >= 0 && plank >= 0 && squats >= 0 && heartRate > 0) {
+            val score = pushUps + plank / 10 + squats - (heartRate - 60).coerceAtLeast(0) / 2
+            repository.saveFitnessTest(FitnessTestResult(pushUps = pushUps, plankSeconds = plank, squats = squats, restingHeartRate = heartRate, score = score))
+        }
     }
     fun deleteAllData() = viewModelScope.launch { repository.deleteAllData() }
     fun saveSettings(item: AppSettings) = viewModelScope.launch { repository.saveSettings(item) }
     fun saveRecovery(sleep: Float, soreness: Int, energy: Int, stress: Int) = viewModelScope.launch {
-        val recommendation = when { sleep < 6 || stress > 7 -> "Rest day"; soreness > 6 -> "Light stretching"; energy > 7 -> "Strength workout"; else -> "Moderate workout" }
-        repository.saveRecovery(RecoveryLog(sleepHours = sleep, soreness = soreness, energy = energy, stress = stress, recommendation = recommendation))
+        if (sleep in 0f..24f && soreness in 1..10 && energy in 1..10 && stress in 1..10) {
+            val recommendation = when { sleep < 6 || stress > 7 -> "Rest day"; soreness > 6 -> "Light stretching"; energy > 7 -> "Strength workout"; else -> "Moderate workout" }
+            repository.saveRecovery(RecoveryLog(sleepHours = sleep, soreness = soreness, energy = energy, stress = stress, recommendation = recommendation))
+        }
     }
     fun quickWorkout(minutes: Int, filters: Set<String>) = LocalFitnessEngine.quickWorkout(uiState.value.allExercises, minutes, filters)
     fun completeQuickWorkout(workout: QuickWorkout) = viewModelScope.launch { repository.completeQuickWorkout(workout, uiState.value.streak) }
@@ -260,21 +267,6 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         val today = LocalDate.now()
         return date.get(weekFields.weekOfWeekBasedYear()) == today.get(weekFields.weekOfWeekBasedYear()) &&
             date.year == today.year
-    }
-
-    private fun calculateStreak(history: List<CompletedWorkout>): Int {
-        val dates = history.map { it.completedAt.toDate() }.distinct().sortedDescending()
-        if (dates.isEmpty()) return 0
-        var expected = LocalDate.now()
-        if (dates.first() != expected) expected = expected.minusDays(1)
-        var streak = 0
-        for (date in dates) {
-            if (date == expected) {
-                streak++
-                expected = expected.minusDays(1)
-            } else if (date < expected) break
-        }
-        return streak
     }
 
     private fun Long.toDate(): LocalDate =

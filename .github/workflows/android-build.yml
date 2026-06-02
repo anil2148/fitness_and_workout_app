@@ -2,8 +2,9 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -28,6 +29,9 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew clean assembleDebug
+
+      - name: Run JVM unit tests
+        run: ./gradlew testDebugUnitTest
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

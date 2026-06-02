@@ -143,7 +143,7 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
             Text("Fitness score: ${report.fitnessScore} / 100")
             Text("Challenge progress: ${report.challengeProgress}")
             Text("Progress photo: ${report.progressPhotoPlaceholder}")
-            OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Export PDF placeholder") }
+            OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text("Coming soon: Export PDF") }
             // TODO: Export this preview with Android PdfDocument.
         }
     }
@@ -181,17 +181,19 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
     var email by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
     var sent by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
     LaunchPage("Contact support", back) {
         OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text("Email") })
         OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text("How can we help?") })
-        Button({ vm.sendSupportMessage(email, message); sent = email.isNotBlank() && message.isNotBlank() }, Modifier.fillMaxWidth()) { Text("Save support request locally") }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button({ if (!email.contains("@") || message.isBlank()) error = "Enter a valid email and a support message." else { vm.sendSupportMessage(email, message); sent = true; error = null } }, Modifier.fillMaxWidth()) { Text("Save support request locally") }
         if (sent) Text("Thanks. Your support request is saved for the future support integration.")
     }
 }
 
 @Composable fun RateAppScreen(back: () -> Unit) = LaunchPage("Rate the app", back) {
     Text("Enjoying your workouts? A future Play Store release will open the in-app review prompt here.")
-    OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Rate app placeholder") }
+    OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text("Coming soon: Play Store rating") }
 }
 
 @Composable fun ShareAppScreen(back: () -> Unit) {

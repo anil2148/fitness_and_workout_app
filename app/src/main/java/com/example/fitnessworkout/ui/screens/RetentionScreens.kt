@@ -28,11 +28,16 @@ import java.time.Instant
 import java.time.ZoneId
 
 @Composable fun MeasurementTrackerScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
-    val state by vm.uiState.collectAsState(); var values by remember { mutableStateOf(List(7) { "" }) }
+    val state by vm.uiState.collectAsState(); var values by remember { mutableStateOf(List(7) { "" }) }; var error by remember { mutableStateOf<String?>(null) }
     TrackerPage("Body measurements", back) {
         item { Text(if (state.isPremiumUser) "Premium history is unlimited." else "Free plan: ${state.measurements.size} / 3 entries used.") }
         item { listOf("Weight kg", "Waist cm", "Chest cm", "Arms cm", "Thighs cm", "Hips cm", "Body fat %").forEachIndexed { i, label -> NumberField(values[i], { text -> values = values.toMutableList().also { it[i] = text } }, label) } }
-        item { Button({ values[0].toFloatOrNull()?.let { vm.saveMeasurement(BodyMeasurement(weightKg = it, waistCm = values[1].number(), chestCm = values[2].number(), armsCm = values[3].number(), thighsCm = values[4].number(), hipsCm = values[5].number(), bodyFatPercent = values[6].number())) } }, Modifier.fillMaxWidth()) { Text("Save measurement") } }
+        item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+        item { Button({
+            val parsed = values.map { if (it.isBlank()) 0f else it.toFloatOrNull() }
+            if (parsed[0] == null || parsed[0]!! <= 0f || parsed.any { it == null || it < 0f } || parsed[6]!! > 100f) error = "Enter a positive weight, non-negative measurements, and body fat from 0-100."
+            else { vm.saveMeasurement(BodyMeasurement(weightKg = parsed[0]!!, waistCm = parsed[1]!!, chestCm = parsed[2]!!, armsCm = parsed[3]!!, thighsCm = parsed[4]!!, hipsCm = parsed[5]!!, bodyFatPercent = parsed[6]!!)); error = null }
+        }, Modifier.fillMaxWidth()) { Text("Save measurement") } }
         if (!state.isPremiumUser && state.measurements.size >= 3) item { OutlinedButton(premium, Modifier.fillMaxWidth()) { Text("Unlock full measurement history") } }
         items(state.measurements) { m -> Text("${date(m.recordedAt)} • ${Units.weight(m.weightKg, state.settings.unitSystem)} • waist ${Units.length(m.waistCm, state.settings.unitSystem)} • body fat ${m.bodyFatPercent}%") }
     }
@@ -60,10 +65,11 @@ import java.time.ZoneId
 }
 
 @Composable fun FitnessTestScreen(vm: FitnessViewModel, back: () -> Unit) {
-    val state by vm.uiState.collectAsState(); var values by remember { mutableStateOf(List(4) { "" }) }
+    val state by vm.uiState.collectAsState(); var values by remember { mutableStateOf(List(4) { "" }) }; var error by remember { mutableStateOf<String?>(null) }
     TrackerPage("Fitness level test", back) {
         item { listOf("Push-ups", "Plank seconds", "Squats", "Resting heart rate").forEachIndexed { i, label -> NumberField(values[i], { text -> values = values.toMutableList().also { it[i] = text } }, label) } }
-        item { Button({ val input = values.map { it.toIntOrNull() }; if (input.all { it != null }) vm.saveFitnessTest(input[0]!!, input[1]!!, input[2]!!, input[3]!!) }, Modifier.fillMaxWidth()) { Text("Save fitness test") } }
+        item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+        item { Button({ val input = values.map { it.toIntOrNull() }; if (input.any { it == null } || input.take(3).any { it!! < 0 } || (input[3] ?: 0) <= 0) error = "Enter non-negative exercise results and a positive resting heart rate." else { vm.saveFitnessTest(input[0]!!, input[1]!!, input[2]!!, input[3]!!); error = null } }, Modifier.fillMaxWidth()) { Text("Save fitness test") } }
         items(state.fitnessTests) { Text("${date(it.recordedAt)} • Score ${it.score} • ${it.pushUps} push-ups • ${it.plankSeconds}s plank") }
     }
 }
@@ -85,11 +91,10 @@ import java.time.ZoneId
 @Composable fun TermsScreen(back: () -> Unit) = LegalScreen("Terms", "Use the app responsibly. Premium purchase buttons are local mock controls until billing integration is added.", back)
 @Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen("Medical disclaimer", stringResource(R.string.medical_disclaimer), back)
 @Composable fun FeedbackScreen(back: () -> Unit) = LegalScreen("Feedback", "Feedback form placeholder. Connect your support email or backend endpoint before release.", back)
-@Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit) = LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button(vm::deleteAllData, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }
+@Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit) { var confirm by remember { mutableStateOf(false) }; LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button({ confirm = true }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }; if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Delete all local data?") }, text = { Text("This cannot be undone.") }, confirmButton = { TextButton({ vm.deleteAllData(); confirm = false; back() }) { Text("Delete") } }, dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } }) }
 
 @Composable private fun PhotoCard(label: String, uri: String, modifier: Modifier) = Card(modifier) { Column(Modifier.padding(12.dp)) { Text(label, fontWeight = FontWeight.Bold); AsyncImage(model = uri, contentDescription = label, modifier = Modifier.fillMaxWidth().height(160.dp)); Text(uri.take(32), style = MaterialTheme.typography.bodySmall) } }
 @Composable private fun LegalScreen(title: String, text: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit = {}) = TrackerPage(title, back) { item { Text(text) }; item { Column(content = content) } }
 @OptIn(ExperimentalMaterial3Api::class) @Composable private fun TrackerPage(title: String, back: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
 @Composable private fun NumberField(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-private fun String.number() = toFloatOrNull() ?: 0f
 private fun date(timestamp: Long) = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate().toString()

@@ -81,7 +81,7 @@ object LocalFitnessEngine {
         val streakPoints = (streak * 3).coerceAtMost(20)
         val completion = history.size.coerceAtMost(15)
         val test = (fitnessTests.firstOrNull()?.score ?: 0).coerceIn(0, 20)
-        val hydration = ((water.amountMl / water.goalMl.toFloat()) * 10).toInt().coerceIn(0, 10)
+        val hydration = ((water.amountMl / water.goalMl.coerceAtLeast(1).toFloat()) * 10).toInt().coerceIn(0, 10)
         val measurement = if (measurements.size >= 2) 10 else measurements.size * 4
         val value = (consistency + streakPoints + completion + test + hydration + measurement).coerceIn(0, 100)
         val tips = buildList {

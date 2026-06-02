@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +71,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import com.example.fitnessworkout.R
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.utils.Units
@@ -159,7 +161,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
                     viewModel.saveSettings(AppSettings(country = country, language = language, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location, injurySafeMode = injurySafeMode))
                     viewModel.acknowledgeSafety()
                 },
-                enabled = acceptedDisclaimer && name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
+                enabled = acceptedDisclaimer && name.isNotBlank() && (age.toIntOrNull() ?: 0) > 0 && (weight.toFloatOrNull() ?: 0f) > 0f && (height.toFloatOrNull() ?: 0f) > 0f,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) { Text("Create my fitness plan") }
         }
@@ -331,7 +333,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinished: () -> Unit = onBack) {
+fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onStartPlayer: () -> Unit, onFinished: () -> Unit = onBack) {
     val plan by viewModel.selectedPlan.collectAsState()
     val exercises by viewModel.selectedExercises.collectAsState()
     val state by viewModel.uiState.collectAsState()
@@ -365,6 +367,12 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
                     Text(it.description)
                     Spacer(Modifier.height(6.dp))
                     Text("${it.durationMinutes} min | ${it.estimatedCalories} kcal", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                item {
+                    Button(onStartPlayer, Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.PlayArrow, null)
+                        Text(" Start guided workout")
+                    }
                 }
                 item {
                     OutlinedButton({ viewModel.toggleFavorite(it.id) }, Modifier.fillMaxWidth()) {
@@ -598,7 +606,7 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
         confirmButton = {
             TextButton(
                 onClick = { onSave(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), goal) },
-                enabled = name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null
+                enabled = name.isNotBlank() && (age.toIntOrNull() ?: 0) > 0 && (weight.toFloatOrNull() ?: 0f) > 0f && (height.toFloatOrNull() ?: 0f) > 0f
             ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
@@ -635,7 +643,7 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
                 Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Start 7-day free trial") }
             }
             item { OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) "Disable mock premium" else "Unlock Premium") } }
-            item { OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Restore purchase placeholder") } }
+            item { OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text("Coming soon: Restore purchase") } }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton({ onNavigate("terms") }) { Text("Terms") }
@@ -657,7 +665,10 @@ private val premiumComparison = listOf(
 @Composable
 private fun ExerciseVisual(exercise: Exercise) {
     Box(Modifier.fillMaxWidth().height(96.dp).clip(RoundedCornerShape(14.dp)).background(FitnessGreen.copy(alpha = .12f)), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.FitnessCenter, null, Modifier.size(42.dp)); Text("${exercise.name} • ${exercise.muscleGroup}") }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Image(painterResource(R.drawable.exercise_placeholder), contentDescription = "${exercise.name} fallback visual", Modifier.size(72.dp))
+            Text("${exercise.name} • ${exercise.muscleGroup}")
+        }
     }
 }
 
@@ -666,6 +677,6 @@ private fun ExerciseVideoPlayer(exercise: Exercise) {
     // TODO: Replace this offline-safe placeholder with packaged MP4 files or Media3 playback.
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FitnessBlack).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.PlayArrow, null, tint = FitnessGreen)
-        Text(" Video guide coming soon  ━━━━━", color = Color.White, style = MaterialTheme.typography.bodySmall)
+        Text(" Video placeholder • Coming soon", color = Color.White, style = MaterialTheme.typography.bodySmall)
     }
 }

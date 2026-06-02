@@ -100,14 +100,16 @@ fun AppFeedbackScreen(vm: FitnessViewModel, back: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
     var saved by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
     ExpansionPage("App feedback", back) {
         item { Text("Share ideas or report a problem. This offline placeholder stores your message locally.") }
         item { OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text("Email") }) }
         item { OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text("Feedback") }) }
+        item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
         item {
             Button({
-                vm.sendSupportMessage(email, message)
-                saved = email.isNotBlank() && message.isNotBlank()
+                if (!email.contains("@") || message.isBlank()) error = "Enter a valid email and a feedback message."
+                else { vm.sendSupportMessage(email, message); saved = true; error = null }
             }, Modifier.fillMaxWidth()) { Text("Save feedback locally") }
         }
         if (saved) item { Text("Feedback saved for the future support integration.") }

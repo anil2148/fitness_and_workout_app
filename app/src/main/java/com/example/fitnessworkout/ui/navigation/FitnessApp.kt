@@ -77,6 +77,7 @@ import com.example.fitnessworkout.ui.screens.ContentCategoriesScreen
 import com.example.fitnessworkout.ui.screens.DailyHabitScreen
 import com.example.fitnessworkout.ui.screens.FitnessReportsScreen
 import com.example.fitnessworkout.ui.screens.FavoriteWorkoutsScreen
+import com.example.fitnessworkout.ui.screens.GuidedWorkoutPlayerScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -122,7 +123,16 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("detail/{planId}") { entry ->
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
-                WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() }, onFinished = {
+                WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() }, onStartPlayer = {
+                    navController.navigate("player/$planId")
+                }, onFinished = {
+                    navController.navigate("cooldown") { popUpTo("workouts") }
+                })
+            }
+            composable("player/{planId}") { entry ->
+                val planId = entry.arguments?.getString("planId")?.toIntOrNull()
+                LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
+                GuidedWorkoutPlayerScreen(viewModel, back = { navController.popBackStack() }, finished = {
                     navController.navigate("cooldown") { popUpTo("workouts") }
                 })
             }

@@ -31,23 +31,33 @@ import com.example.fitnessworkout.utils.Units
 }
 
 @Composable fun WaterScreen(vm: FitnessViewModel, back: () -> Unit) {
-    val state by vm.uiState.collectAsState(); var custom by remember { mutableStateOf("") }
+    val state by vm.uiState.collectAsState(); var custom by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }
     FeaturePage("Water tracker", back) {
         Text("${Units.water(state.water.amountMl, state.settings.unitSystem)} / ${Units.water(state.water.goalMl, state.settings.unitSystem)}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        LinearProgressIndicator({ (state.water.amountMl / state.water.goalMl.toFloat()).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
+        LinearProgressIndicator({ (state.water.amountMl / state.water.goalMl.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
         Button({ vm.addWater(250) }, Modifier.fillMaxWidth()) { Text("Add 250 ml") }
         Field(custom, { custom = it }, "Custom amount (ml)", true)
-        OutlinedButton({ custom.toIntOrNull()?.let(vm::addWater); custom = "" }, Modifier.fillMaxWidth()) { Text("Add custom amount") }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        OutlinedButton({
+            val amount = custom.toIntOrNull()
+            if (amount == null || amount <= 0) error = "Enter an amount greater than 0 ml."
+            else { vm.addWater(amount); custom = ""; error = null }
+        }, Modifier.fillMaxWidth()) { Text("Add custom amount") }
         TextButton(vm::resetWater, Modifier.fillMaxWidth()) { Text("Reset today") }
     }
 }
 
 @Composable fun CalculatorScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); val user = state.user
-    var weight by remember { mutableStateOf(user?.weightKg?.toString().orEmpty()) }; var height by remember { mutableStateOf(user?.heightCm?.toString().orEmpty()) }; var age by remember { mutableStateOf(user?.age?.toString().orEmpty()) }
+    var weight by remember { mutableStateOf(user?.weightKg?.toString().orEmpty()) }; var height by remember { mutableStateOf(user?.heightCm?.toString().orEmpty()) }; var age by remember { mutableStateOf(user?.age?.toString().orEmpty()) }; var error by remember { mutableStateOf<String?>(null) }
     FeaturePage("Health calculators", back) {
         Field(weight, { weight = it }, "Weight (kg)", true); Field(height, { height = it }, "Height (cm)", true); Field(age, { age = it }, "Age", true)
-        Button({ val w = weight.toFloatOrNull(); val h = height.toFloatOrNull(); val a = age.toIntOrNull(); if (w != null && h != null && a != null) vm.calculateHealth(w, h, a) }, Modifier.fillMaxWidth()) { Text("Calculate BMI, BMR, calories and water") }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button({
+            val w = weight.toFloatOrNull(); val h = height.toFloatOrNull(); val a = age.toIntOrNull()
+            if (w == null || h == null || a == null || w <= 0 || h <= 0 || a <= 0) error = "Enter positive numbers for weight, height, and age."
+            else { vm.calculateHealth(w, h, a); error = null }
+        }, Modifier.fillMaxWidth()) { Text("Calculate BMI, BMR, calories and water") }
         state.healthMetric?.let { Text("BMI ${"%.1f".format(it.bmi)} • ${bmiLabel(it.bmi)}\nBMR ${it.bmr.toInt()} kcal • Daily needs ${it.calorieNeeds.toInt()} kcal\nWater ${it.waterMl} ml • Ideal weight ${"%.1f".format(it.idealWeightMin)}-${"%.1f".format(it.idealWeightMax)} kg") }
         Text("This is only an estimate. Consult a healthcare professional for medical guidance.", style = MaterialTheme.typography.bodySmall)
     }
