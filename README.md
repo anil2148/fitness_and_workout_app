@@ -43,7 +43,9 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
 - Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
 - GitHub Actions debug build that uploads the APK as `fitness-workout-debug-apk`
-- Guided offline workout player with start, pause, resume, next, finish, progress, and safe-exit controls
+- Guided offline workout player with start, pause, resume, next, skip, rest countdown, finish, progress, and safe-exit controls
+- Returning-user splash routing that waits for local profile state and opens Home directly after onboarding is complete
+- Workout search and level filters with safe empty-result handling
 - Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
 - Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
 
@@ -115,7 +117,7 @@ Run the Linux/Codespaces-friendly verification script:
 ./scripts/verify_app.sh
 ```
 
-It prints the Java version, cleans the project, runs JVM unit tests, builds the debug APK, and confirms that the APK exists.
+It prints the Java version, cleans the project, attempts JVM unit tests, builds the debug APK, and confirms that the APK exists. Run `./gradlew testDebugUnitTest` directly when unit-test success is required.
 
 ## Download APK from GitHub Actions
 

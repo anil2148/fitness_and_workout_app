@@ -46,8 +46,13 @@ import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(finished: () -> Unit) {
-    LaunchedEffect(Unit) { delay(700); finished() }
+fun SplashScreen(isLoading: Boolean, finished: () -> Unit) {
+    LaunchedEffect(isLoading) {
+        if (!isLoading) {
+            delay(700)
+            finished()
+        }
+    }
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = Arrangement.Center,
@@ -56,6 +61,7 @@ fun SplashScreen(finished: () -> Unit) {
         Icon(Icons.Default.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary)
         Text("Fitness and Workout", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
         Text("Build habits. Track progress. Feel stronger.")
+        if (isLoading) Text("Loading your local fitness plan...")
     }
 }
 

@@ -208,7 +208,7 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         val bmr = FitnessCalculations.bmr(weightKg, heightCm, age)
         viewModelScope.launch {
             repository.saveHealthMetric(HealthMetric(bmi = bmi, bmr = bmr, calorieNeeds = FitnessCalculations.calorieNeeds(bmr, activityMultiplier),
-                waterMl = (weightKg * 35).toInt(), idealWeightMin = 18.5f * meters * meters, idealWeightMax = 24.9f * meters * meters))
+                waterMl = FitnessCalculations.waterIntakeMl(weightKg), idealWeightMin = 18.5f * meters * meters, idealWeightMax = 24.9f * meters * meters))
         }
     }
     fun generateCustomPlan(goal: String, level: String, minutes: Int, equipment: String, bodyFocus: String = "Full Body") =

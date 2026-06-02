@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -93,6 +94,7 @@ private val bottomDestinations = listOf(
 @Composable
 fun FitnessApp(viewModel: FitnessViewModel) {
     val navController = rememberNavController()
+    val state by viewModel.uiState.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomDestinations.map { it.route }
@@ -104,7 +106,10 @@ fun FitnessApp(viewModel: FitnessViewModel) {
     ) { padding ->
         NavHost(navController = navController, startDestination = "splash", modifier = Modifier) {
             composable("splash") {
-                SplashScreen { navController.navigate("onboarding") { popUpTo("splash") { inclusive = true } } }
+                SplashScreen(state.isLoading) {
+                    val destination = if (state.user != null && state.safetyAcknowledgement.medicalDisclaimerAccepted) "home" else "onboarding"
+                    navController.navigate(destination) { popUpTo("splash") { inclusive = true } }
+                }
             }
             composable("onboarding") {
                 OnboardingScreen(viewModel) {

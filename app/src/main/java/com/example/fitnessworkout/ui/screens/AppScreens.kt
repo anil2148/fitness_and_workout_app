@@ -291,6 +291,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
     val state by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedLevel by remember { mutableStateOf("Beginner") }
+    var search by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().padding(padding)) {
         Column(Modifier.padding(18.dp)) {
             SectionTitle("Workout plans", "Pick a routine that meets you where you are.")
@@ -307,13 +308,23 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
                     items(state.recentPlans.take(3), key = { "recent-${it.id}" }) { WorkoutPlanCard(it, { onPlan(it.id) }) }
                 }
                 item {
+                    OutlinedTextField(
+                        value = search,
+                        onValueChange = { search = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search workouts") },
+                    )
+                }
+                item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Beginner", "Intermediate", "Advanced").forEach {
                             FilterChip(selected = selectedLevel == it, onClick = { selectedLevel = it }, label = { Text(it) })
                         }
                     }
                 }
-                items(state.standardPlans.filter { it.level == selectedLevel }, key = { it.id }) {
+                val filteredPlans = state.standardPlans.filter { it.level == selectedLevel && it.title.contains(search.trim(), ignoreCase = true) }
+                if (filteredPlans.isEmpty()) item { Text("No workout plans match this search.") }
+                items(filteredPlans, key = { it.id }) {
                     val locked = it.premiumOnly && !state.isPremiumUser
                     WorkoutPlanCard(it, onClick = { if (locked) onPremium() else onPlan(it.id) }, locked = locked)
                 }
@@ -507,7 +518,7 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item { SectionTitle("Profile", "Your health details and fitness goal.") }
-        item { ProfileSummary(user) }
+        item { ProfileSummary(user, state.settings.unitSystem) }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Dark mode", Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -565,11 +576,11 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
 }
 
 @Composable
-private fun ProfileSummary(user: UserProfile) {
+private fun ProfileSummary(user: UserProfile, unitSystem: String) {
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = FitnessBlack)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(user.name, color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("${user.age} years | ${user.weightKg} kg | ${user.heightCm} cm", color = Color.LightGray)
+            Text("${user.age} years | ${Units.weight(user.weightKg, unitSystem)} | ${Units.length(user.heightCm, unitSystem)}", color = Color.LightGray)
             Text("Goal: ${user.fitnessGoal}", color = FitnessGreen, fontWeight = FontWeight.Bold)
             Text("BMI: ${"%.1f".format(user.bmi)} (${bmiLabel(user.bmi)})", color = Color.White)
         }

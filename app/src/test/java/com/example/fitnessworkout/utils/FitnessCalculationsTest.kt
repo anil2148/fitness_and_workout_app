@@ -17,6 +17,16 @@ class FitnessCalculationsTest {
         assertEquals(0f, FitnessCalculations.bmi(70f, 0f), 0f)
     }
 
+    @Test fun bmrUsesMetricFormulaAndRejectsInvalidInput() {
+        assertEquals(1648.75f, FitnessCalculations.bmr(70f, 175f, 30), 0.01f)
+        assertEquals(0f, FitnessCalculations.bmr(70f, 175f, 0), 0f)
+    }
+
+    @Test fun waterIntakeUsesBodyWeightAndRejectsInvalidInput() {
+        assertEquals(2450, FitnessCalculations.waterIntakeMl(70f))
+        assertEquals(0, FitnessCalculations.waterIntakeMl(0f))
+    }
+
     @Test fun unitsConvertImperialInputToMetric() {
         assertEquals(1f, Units.inputWeight(2.20462f, "Imperial"), 0.001f)
         assertEquals(2.54f, Units.inputLength(1f, "Imperial"), 0.001f)

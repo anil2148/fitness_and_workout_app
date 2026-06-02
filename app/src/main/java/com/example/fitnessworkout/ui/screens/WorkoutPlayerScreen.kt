@@ -47,18 +47,27 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: 
     var index by remember(plan?.id) { mutableIntStateOf(0) }
     var remainingSeconds by remember(plan?.id) { mutableIntStateOf(0) }
     var running by remember(plan?.id) { mutableStateOf(false) }
+    var resting by remember(plan?.id) { mutableStateOf(false) }
     var showExitWarning by remember { mutableStateOf(false) }
     val exercise = exercises.getOrNull(index)
 
     LaunchedEffect(exercise?.id) {
         remainingSeconds = exercise?.playerSeconds() ?: 0
     }
-    LaunchedEffect(running, remainingSeconds, index, exercises.size) {
+    LaunchedEffect(running, remainingSeconds, index, exercises.size, resting) {
         if (running && remainingSeconds > 0) {
             delay(1_000)
             remainingSeconds--
         } else if (running && remainingSeconds == 0 && exercises.isNotEmpty()) {
-            if (index < exercises.lastIndex) index++ else running = false
+            if (resting) {
+                resting = false
+                if (index < exercises.lastIndex) index++ else running = false
+            } else if (index < exercises.lastIndex) {
+                resting = true
+                remainingSeconds = exercise?.restSeconds?.coerceAtLeast(0) ?: 0
+            } else {
+                running = false
+            }
         }
     }
 
@@ -78,10 +87,14 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: 
                 Text("Exercise ${index + 1} of ${exercises.size}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 LinearProgressIndicator({ (index + 1) / exercises.size.toFloat() }, Modifier.fillMaxWidth())
                 Icon(Icons.Default.FitnessCenter, null)
-                Text(exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-                Text(exercise.repsOrDuration)
-                Text(exercise.instruction)
-                Text("Safety: ${exercise.safetyTips}", color = MaterialTheme.colorScheme.error)
+                Text(if (resting) "Rest" else exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+                if (resting) {
+                    Text("Breathe, hydrate if needed, and prepare for the next exercise.")
+                } else {
+                    Text(exercise.repsOrDuration)
+                    Text(exercise.instruction)
+                    Text("Safety: ${exercise.safetyTips}", color = MaterialTheme.colorScheme.error)
+                }
                 Text("$remainingSeconds sec", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button({ running = !running }, Modifier.weight(1f)) {
@@ -90,12 +103,21 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: 
                     }
                     OutlinedButton({
                         running = false
+                        resting = false
                         if (index < exercises.lastIndex) index++ else {
                             vm.completeSelectedWorkout()
                             finished()
                         }
                     }, Modifier.weight(1f)) { Text(if (index < exercises.lastIndex) "Next" else "Finish") }
                 }
+                OutlinedButton({
+                    running = false
+                    resting = false
+                    if (index < exercises.lastIndex) index++ else {
+                        vm.completeSelectedWorkout()
+                        finished()
+                    }
+                }, Modifier.fillMaxWidth()) { Text("Skip exercise") }
                 OutlinedButton({
                     running = false
                     vm.completeSelectedWorkout()

@@ -17,6 +17,9 @@ object FitnessCalculations {
     fun calorieNeeds(bmr: Float, activityMultiplier: Float): Float =
         if (bmr > 0f && activityMultiplier > 0f) bmr * activityMultiplier else 0f
 
+    fun waterIntakeMl(weightKg: Float): Int =
+        if (weightKg > 0f) (weightKg * 35).toInt() else 0
+
     fun streak(timestamps: List<Long>, today: LocalDate = LocalDate.now()): Int {
         val dates = timestamps.map { it.toDate() }.distinct().sortedDescending()
         if (dates.isEmpty()) return 0
