@@ -51,22 +51,34 @@ object SampleData {
                 sets = 2 + intensity,
                 restSeconds = 40 - intensity * 5,
                 instruction = instructionFor(name),
-                durationSeconds = if (timed) 30 + intensity * 10 else null
+                durationSeconds = if (timed) 30 + intensity * 10 else null,
+                description = "$name targets $category with a controlled ${if (timed) "timed" else "repetition"} interval.",
+                muscleGroup = category,
+                difficulty = if (intensity == 1) "Beginner" else if (intensity == 2) "Intermediate" else "Advanced",
+                equipment = if (name in listOf("Chest Press", "Bicep Curls", "Step Ups")) "Optional dumbbells" else "No equipment",
+                imageResName = imageName(name),
+                localVideoName = "video_${imageName(name).removePrefix("exercise_")}",
+                caloriesPerMinute = 5 + intensity,
+                safetyTips = "Warm up first. Keep your form steady and stop if you feel pain.",
+                commonMistakes = "Avoid rushing, holding your breath, or losing alignment."
             )
         }
     }
 
     private fun challengePlans(): List<WorkoutPlanWithExercises> = (1..30).map { day ->
         val category = listOf("Full Body", "Cardio", "Abs", "Legs")[day % 4]
+        val challenge = listOf("30-Day Beginner Fitness", "30-Day Fat Loss", "30-Day Muscle Gain", "30-Day Abs")[day % 4]
         WorkoutPlanWithExercises(
             WorkoutPlan(
-                title = "Challenge Day $day",
+                title = "$challenge • Day $day",
                 level = if (day < 11) "Beginner" else if (day < 21) "Intermediate" else "Advanced",
                 category = category,
                 description = "Day $day of your 30-day consistency challenge.",
                 estimatedCalories = 130 + day * 5,
                 durationMinutes = 15 + day / 2,
-                challengeDay = day
+                challengeDay = day,
+                premiumOnly = challenge != "30-Day Beginner Fitness",
+                challengeName = challenge
             ),
             exercisesFor(category, if (day < 11) 1 else if (day < 21) 2 else 3)
         )
@@ -79,4 +91,7 @@ object SampleData {
         "Reverse Lunges" -> "Step back softly and keep the front knee aligned."
         else -> "Move with control, breathe steadily, and maintain good form."
     }
+
+    private fun imageName(name: String) = "exercise_" + name.lowercase()
+        .replace("-", "").replace(" ", "_")
 }

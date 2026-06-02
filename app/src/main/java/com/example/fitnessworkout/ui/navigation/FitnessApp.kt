@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -27,6 +28,12 @@ import com.example.fitnessworkout.ui.screens.ProfileScreen
 import com.example.fitnessworkout.ui.screens.ProgressScreen
 import com.example.fitnessworkout.ui.screens.WorkoutDetailScreen
 import com.example.fitnessworkout.ui.screens.WorkoutsScreen
+import com.example.fitnessworkout.ui.screens.CalculatorScreen
+import com.example.fitnessworkout.ui.screens.ChallengesScreen
+import com.example.fitnessworkout.ui.screens.CustomPlanScreen
+import com.example.fitnessworkout.ui.screens.DietScreen
+import com.example.fitnessworkout.ui.screens.ReminderScreen
+import com.example.fitnessworkout.ui.screens.WaterScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -34,6 +41,7 @@ private data class BottomDestination(val route: String, val label: String, val i
 private val bottomDestinations = listOf(
     BottomDestination("home", "Home", Icons.Default.Home),
     BottomDestination("workouts", "Workouts", Icons.Default.FitnessCenter),
+    BottomDestination("challenges", "Challenges", Icons.Default.EmojiEvents),
     BottomDestination("progress", "Progress", Icons.Default.BarChart),
     BottomDestination("profile", "Profile", Icons.Default.Person)
 )
@@ -60,16 +68,22 @@ fun FitnessApp(viewModel: FitnessViewModel) {
                 HomeScreen(viewModel, padding, onNavigate = { navController.navigate(it) }, onPlan = { openPlan(navController, viewModel, it) })
             }
             composable("workouts") {
-                WorkoutsScreen(viewModel, padding, onPlan = { openPlan(navController, viewModel, it) })
+                WorkoutsScreen(viewModel, padding, onPlan = { openPlan(navController, viewModel, it) }, onPremium = { navController.navigate("premium") })
             }
-            composable("progress") { ProgressScreen(viewModel, padding) }
-            composable("profile") { ProfileScreen(viewModel, padding, onPremium = { navController.navigate("premium") }) }
+            composable("challenges") { ChallengesScreen(viewModel, padding, { openPlan(navController, viewModel, it) }, { navController.navigate("premium") }) }
+            composable("progress") { ProgressScreen(viewModel, padding, onPremium = { navController.navigate("premium") }) }
+            composable("profile") { ProfileScreen(viewModel, padding, onPremium = { navController.navigate("premium") }, onNavigate = { navController.navigate(it) }) }
             composable("detail/{planId}") { entry ->
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
                 WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() })
             }
-            composable("premium") { PremiumScreen(onBack = { navController.popBackStack() }) }
+            composable("premium") { PremiumScreen(viewModel, onBack = { navController.popBackStack() }) }
+            composable("water") { WaterScreen(viewModel) { navController.popBackStack() } }
+            composable("calculators") { CalculatorScreen(viewModel) { navController.popBackStack() } }
+            composable("diet") { DietScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("custom") { CustomPlanScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("reminders") { ReminderScreen(viewModel) { navController.popBackStack() } }
         }
     }
 }

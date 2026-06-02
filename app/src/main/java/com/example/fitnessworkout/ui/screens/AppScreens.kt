@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -154,6 +156,13 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
         }
         item { DashboardStats(state) }
         item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard("BMI", "${"%.1f".format(state.user?.bmi ?: 0f)}", Modifier.weight(1f))
+                StatCard("Water", "${state.water.amountMl} / ${state.water.goalMl} ml", Modifier.weight(1f))
+            }
+        }
+        if (state.isPremiumUser) item { Text("★ PREMIUM MEMBER", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold) }
+        item {
             ChallengeProgress(challengeCompleted)
         }
         item {
@@ -174,7 +183,7 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
                 QuickButton("Profile", Modifier.weight(1f)) { onNavigate("profile") }
             }
         }
-        item { AdBannerPlaceholder() }
+        if (!state.isPremiumUser) item { AdBannerPlaceholder() }
     }
 }
 
@@ -195,7 +204,7 @@ private fun QuickButton(label: String, modifier: Modifier, onClick: () -> Unit) 
 }
 
 @Composable
-fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: (Int) -> Unit) {
+fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: (Int) -> Unit, onPremium: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedLevel by remember { mutableStateOf("Beginner") }
@@ -217,7 +226,8 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
                     }
                 }
                 items(state.standardPlans.filter { it.level == selectedLevel }, key = { it.id }) {
-                    WorkoutPlanCard(it, onClick = { onPlan(it.id) })
+                    val locked = it.premiumOnly && !state.isPremiumUser
+                    WorkoutPlanCard(it, onClick = { if (locked) onPremium() else onPlan(it.id) }, locked = locked)
                 }
             }
         } else {
@@ -225,7 +235,8 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
             LazyColumn(contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item { ChallengeProgress(state.challengePlans.count { it.id in completedIds }) }
                 items(state.challengePlans, key = { it.id }) { plan ->
-                    WorkoutPlanCard(plan, onClick = { onPlan(plan.id) })
+                    val locked = plan.premiumOnly && !state.isPremiumUser
+                    WorkoutPlanCard(plan, onClick = { if (locked) onPremium() else onPlan(plan.id) }, locked = locked)
                 }
             }
         }
@@ -313,8 +324,13 @@ private fun ExerciseCard(
                 Text(exercise.name, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                 IconButton(onClick = onComplete) { Icon(Icons.Default.CheckCircle, "Mark complete", tint = if (isComplete) MaterialTheme.colorScheme.primary else Color.Gray) }
             }
-            Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest", style = MaterialTheme.typography.bodySmall)
+            ExerciseVisual(exercise)
+            ExerciseVideoPlayer(exercise)
+            Text("${exercise.muscleGroup} | ${exercise.difficulty} | ${exercise.equipment}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+            Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest | ${exercise.caloriesPerMinute} kcal/min", style = MaterialTheme.typography.bodySmall)
             Text(exercise.instruction, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Safety: ${exercise.safetyTips}", style = MaterialTheme.typography.bodySmall)
+            Text("Avoid: ${exercise.commonMistakes}", style = MaterialTheme.typography.bodySmall)
             if (exercise.durationSeconds != null) {
                 OutlinedButton(onClick = onTimer) { Text(timerText ?: "Start timer") }
             }
@@ -323,7 +339,7 @@ private fun ExerciseCard(
 }
 
 @Composable
-fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues) {
+fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp),
@@ -344,6 +360,11 @@ fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues) {
             }
         }
         item { SectionTitle("Recent workouts") }
+        item {
+            if (state.isPremiumUser) {
+                Text("Advanced analytics: consistency ${(state.weeklyCount / 7f * 100).toInt()}% • average ${state.history.map { it.durationMinutes }.average().takeIf { !it.isNaN() }?.toInt() ?: 0} min", fontWeight = FontWeight.Bold)
+            } else OutlinedButton(onPremium, Modifier.fillMaxWidth()) { Icon(Icons.Default.Lock, null); Text(" Unlock advanced analytics") }
+        }
         if (state.history.isEmpty()) item { Text("Complete your first workout to start building your history.") }
         items(state.history, key = { it.id }) {
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
@@ -357,7 +378,7 @@ fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues) {
 }
 
 @Composable
-fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit) {
+fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user ?: return
     var showEditor by remember { mutableStateOf(false) }
@@ -369,6 +390,12 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
     ) {
         item { SectionTitle("Profile", "Your health details and fitness goal.") }
         item { ProfileSummary(user) }
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Dark mode", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                Switch(user.darkMode, viewModel::setDarkMode)
+            }
+        }
         item {
             Button(onClick = { showEditor = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Edit, null)
@@ -382,12 +409,18 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
             }
         }
         item {
+            listOf("water" to "Water tracker", "calculators" to "Health calculators", "diet" to "Diet guidance",
+                "custom" to "Custom workout plan", "reminders" to "Daily reminders").forEach { (route, label) ->
+                OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
+            }
+        }
+        item {
             TextButton(onClick = { showReset = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Refresh, null)
                 Text(" Reset progress")
             }
         }
-        item { AdBannerPlaceholder() }
+        if (!state.isPremiumUser) item { AdBannerPlaceholder() }
     }
     if (showEditor) EditProfileDialog(user, onDismiss = { showEditor = false }) { name, age, weight, height, goal ->
         viewModel.saveUser(name, age, weight, height, goal)
@@ -453,7 +486,8 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PremiumScreen(onBack: () -> Unit) {
+fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
+    val state by viewModel.uiState.collectAsState()
     Scaffold(topBar = {
         TopAppBar(title = { Text("Fitness Premium") }, navigationIcon = {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
@@ -465,14 +499,35 @@ fun PremiumScreen(onBack: () -> Unit) {
         ) {
             Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp))
             Text("Unlock your next level", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-            Text("Premium is a placeholder ready for future billing integration.")
-            listOf("Custom workout plans", "No ads", "Advanced progress analytics", "Diet plan").forEach {
+            Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("$2.99\nMonthly", "$19.99\nYearly\nBest Value", "$29.99\nLifetime").forEach { Text(it, Modifier.weight(1f).background(FitnessGreen.copy(alpha = .16f)).padding(10.dp), fontWeight = FontWeight.Bold) }
+            }
+            listOf("No ads", "30-day fat loss and muscle gain challenges", "Custom workout plans", "Advanced progress analytics", "Diet and meal guidance", "Water intake tracker", "BMI and calorie calculator", "Exercise videos and visual guides", "Offline workout downloads placeholder", "Daily reminders placeholder").forEach {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
                     Text(it, fontWeight = FontWeight.Bold)
                 }
             }
-            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) { Text("Coming soon") }
+            // TODO: Replace the local toggle with Google Play Billing purchase verification.
+            Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Start Free Trial") }
+            OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) "Disable mock premium" else "Unlock Premium") }
         }
+    }
+}
+
+@Composable
+private fun ExerciseVisual(exercise: Exercise) {
+    Box(Modifier.fillMaxWidth().height(96.dp).clip(RoundedCornerShape(14.dp)).background(FitnessGreen.copy(alpha = .12f)), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.FitnessCenter, null, Modifier.size(42.dp)); Text("${exercise.name} • ${exercise.muscleGroup}") }
+    }
+}
+
+@Composable
+private fun ExerciseVideoPlayer(exercise: Exercise) {
+    // TODO: Replace this offline-safe placeholder with packaged MP4 files or Media3 playback.
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FitnessBlack).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.PlayArrow, null, tint = FitnessGreen)
+        Text(" Video guide coming soon  ━━━━━", color = Color.White, style = MaterialTheme.typography.bodySmall)
     }
 }

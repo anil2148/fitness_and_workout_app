@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -39,7 +40,7 @@ fun SectionTitle(title: String, subtitle: String? = null) {
 }
 
 @Composable
-fun WorkoutPlanCard(plan: WorkoutPlan, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun WorkoutPlanCard(plan: WorkoutPlan, onClick: () -> Unit, modifier: Modifier = Modifier, locked: Boolean = false) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().animateContentSize(),
@@ -61,7 +62,8 @@ fun WorkoutPlanCard(plan: WorkoutPlan, onClick: () -> Unit, modifier: Modifier =
                 Text(plan.title, fontWeight = FontWeight.Bold)
                 Text("${plan.category} | ${plan.durationMinutes} min | ${plan.estimatedCalories} kcal", style = MaterialTheme.typography.bodySmall)
             }
-            Text(plan.level.take(1), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            if (locked) Icon(Icons.Default.Lock, "Premium locked", tint = MaterialTheme.colorScheme.primary)
+            else Text(plan.level.take(1), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
     }
 }

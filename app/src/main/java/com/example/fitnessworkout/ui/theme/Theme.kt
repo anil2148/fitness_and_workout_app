@@ -34,9 +34,9 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun FitnessTheme(content: @Composable () -> Unit) {
+fun FitnessTheme(darkMode: Boolean? = null, content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        colorScheme = if (darkMode ?: isSystemInDarkTheme()) DarkColors else LightColors,
         content = content
     )
 }

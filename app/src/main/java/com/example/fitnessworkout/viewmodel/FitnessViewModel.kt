@@ -8,6 +8,10 @@ import com.example.fitnessworkout.data.model.CompletedWorkout
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
+import com.example.fitnessworkout.data.model.CustomWorkoutPlan
+import com.example.fitnessworkout.data.model.HealthMetric
+import com.example.fitnessworkout.data.model.ReminderSettings
+import com.example.fitnessworkout.data.model.WaterLog
 import com.example.fitnessworkout.repository.FitnessRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -33,6 +37,12 @@ data class FitnessUiState(
     val weeklyCount: Int = 0,
     val streak: Int = 0,
     val quote: String = SampleData.quotes.first()
+    ,
+    val isPremiumUser: Boolean = false,
+    val water: WaterLog = WaterLog(LocalDate.now().toString()),
+    val healthMetric: HealthMetric? = null,
+    val reminders: ReminderSettings = ReminderSettings(),
+    val customPlans: List<CustomWorkoutPlan> = emptyList()
 ) {
     val standardPlans get() = plans.filter { it.challengeDay == null }
     val challengePlans get() = plans.filter { it.challengeDay != null }.sortedBy { it.challengeDay }
@@ -47,8 +57,21 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
     val uiState: StateFlow<FitnessUiState> = combine(
         repository.user,
         repository.plans,
-        repository.completedWorkouts
-    ) { user, plans, history ->
+        repository.completedWorkouts,
+        repository.premium,
+        repository.water,
+        repository.healthMetric,
+        repository.reminders,
+        repository.customPlans
+    ) { values ->
+        val user = values[0] as UserProfile?
+        @Suppress("UNCHECKED_CAST") val plans = values[1] as List<WorkoutPlan>
+        @Suppress("UNCHECKED_CAST") val history = values[2] as List<CompletedWorkout>
+        val premium = values[3] as com.example.fitnessworkout.data.model.PremiumStatus?
+        val water = values[4] as WaterLog?
+        val healthMetric = values[5] as HealthMetric?
+        val reminders = values[6] as ReminderSettings?
+        @Suppress("UNCHECKED_CAST") val customPlans = values[7] as List<CustomWorkoutPlan>
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -57,7 +80,12 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             totalCalories = history.sumOf { it.caloriesBurned },
             weeklyCount = history.count { isCurrentWeek(it.completedAt) },
             streak = calculateStreak(history),
-            quote = SampleData.quotes[LocalDate.now().dayOfYear % SampleData.quotes.size]
+            quote = SampleData.quotes[LocalDate.now().dayOfYear % SampleData.quotes.size],
+            isPremiumUser = premium?.isPremiumUser ?: false,
+            water = water ?: WaterLog(LocalDate.now().toString()),
+            healthMetric = healthMetric,
+            reminders = reminders ?: ReminderSettings(),
+            customPlans = customPlans
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FitnessUiState())
 
@@ -77,10 +105,14 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         selectedPlanId.value = planId
     }
 
-    fun saveUser(name: String, age: Int, weight: Float, height: Float, goal: String) {
+    fun saveUser(name: String, age: Int, weight: Float, height: Float, goal: String, darkMode: Boolean = uiState.value.user?.darkMode ?: false) {
         viewModelScope.launch {
-            repository.saveUser(UserProfile(name = name, age = age, weightKg = weight, heightCm = height, fitnessGoal = goal))
+            repository.saveUser(UserProfile(name = name, age = age, weightKg = weight, heightCm = height, fitnessGoal = goal, darkMode = darkMode))
         }
+    }
+
+    fun setDarkMode(enabled: Boolean) {
+        uiState.value.user?.let { user -> viewModelScope.launch { repository.saveUser(user.copy(darkMode = enabled)) } }
     }
 
     fun completeSelectedWorkout() {
@@ -92,6 +124,23 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
     fun resetProgress() {
         viewModelScope.launch { repository.resetProgress() }
     }
+
+    fun setPremium(enabled: Boolean) = viewModelScope.launch { repository.setPremium(enabled) }
+    fun addWater(amountMl: Int) = viewModelScope.launch { if (amountMl > 0) repository.addWater(amountMl, uiState.value.water) }
+    fun resetWater() = viewModelScope.launch { repository.resetWater(uiState.value.water) }
+    fun saveReminders(settings: ReminderSettings) = viewModelScope.launch { repository.saveReminders(settings) }
+    fun calculateHealth(weightKg: Float, heightCm: Float, age: Int, activityMultiplier: Float = 1.375f) {
+        if (weightKg <= 0 || heightCm <= 0 || age <= 0) return
+        val meters = heightCm / 100f
+        val bmi = weightKg / (meters * meters)
+        val bmr = 10f * weightKg + 6.25f * heightCm - 5f * age + 5f
+        viewModelScope.launch {
+            repository.saveHealthMetric(HealthMetric(bmi = bmi, bmr = bmr, calorieNeeds = bmr * activityMultiplier,
+                waterMl = (weightKg * 35).toInt(), idealWeightMin = 18.5f * meters * meters, idealWeightMax = 24.9f * meters * meters))
+        }
+    }
+    fun generateCustomPlan(goal: String, level: String, minutes: Int, equipment: String) =
+        viewModelScope.launch { repository.saveCustomPlan(CustomWorkoutPlan(goal = goal, level = level, availableMinutes = minutes, equipment = equipment, generatedTitle = "$minutes-min $goal plan")) }
 
     private fun isCurrentWeek(timestamp: Long): Boolean {
         val date = timestamp.toDate()

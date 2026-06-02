@@ -9,6 +9,11 @@ import com.example.fitnessworkout.data.model.CompletedWorkout
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
+import com.example.fitnessworkout.data.model.CustomWorkoutPlan
+import com.example.fitnessworkout.data.model.HealthMetric
+import com.example.fitnessworkout.data.model.PremiumStatus
+import com.example.fitnessworkout.data.model.ReminderSettings
+import com.example.fitnessworkout.data.model.WaterLog
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -42,6 +47,36 @@ interface FitnessDao {
 
     @Query("DELETE FROM completed_workouts")
     suspend fun resetProgress()
+
+    @Query("SELECT * FROM premium_status WHERE id = 1")
+    fun observePremium(): Flow<PremiumStatus?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPremium(status: PremiumStatus)
+
+    @Query("SELECT * FROM water_logs WHERE date = :date")
+    fun observeWater(date: String): Flow<WaterLog?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertWater(log: WaterLog)
+
+    @Query("SELECT * FROM health_metrics WHERE id = 1")
+    fun observeHealthMetric(): Flow<HealthMetric?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertHealthMetric(metric: HealthMetric)
+
+    @Query("SELECT * FROM reminder_settings WHERE id = 1")
+    fun observeReminders(): Flow<ReminderSettings?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertReminders(settings: ReminderSettings)
+
+    @Query("SELECT * FROM custom_workout_plans ORDER BY id DESC")
+    fun observeCustomPlans(): Flow<List<CustomWorkoutPlan>>
+
+    @Insert
+    suspend fun insertCustomPlan(plan: CustomWorkoutPlan)
 
     @Query("SELECT COUNT(*) FROM workout_plans")
     suspend fun planCount(): Int

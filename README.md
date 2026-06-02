@@ -11,7 +11,11 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Room-backed progress history with completed workouts, calories, weekly count, and streak tracking
 - Editable profile with BMI calculation, goal updates, and progress reset
 - 30-day workout challenge with gradually increasing difficulty
-- Premium placeholder with future benefits and a reusable ad banner placeholder
+- Locally mocked Premium plans with free-vs-premium locks and ad hiding
+- Water tracking, health calculators, diet guidance, reminders, and local custom workout plans
+- Premium challenges for fat loss, muscle gain, and abs plus a free beginner challenge
+- Exercise visual and video placeholders with safety tips, equipment, muscle groups, and common mistakes
+- Dark mode preference, reusable ad placeholder, and advanced progress summary
 - Material 3 UI with a responsive scrollable layout, rounded cards, icons, and simple animations
 
 ## Tech Stack

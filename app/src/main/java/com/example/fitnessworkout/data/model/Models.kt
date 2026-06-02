@@ -12,7 +12,8 @@ data class UserProfile(
     val age: Int,
     val weightKg: Float,
     val heightCm: Float,
-    val fitnessGoal: String
+    val fitnessGoal: String,
+    val darkMode: Boolean = false
 ) {
     val bmi: Float get() = if (heightCm > 0) weightKg / ((heightCm / 100) * (heightCm / 100)) else 0f
 }
@@ -26,7 +27,9 @@ data class WorkoutPlan(
     val description: String,
     val estimatedCalories: Int,
     val durationMinutes: Int,
-    val challengeDay: Int? = null
+    val challengeDay: Int? = null,
+    val premiumOnly: Boolean = level != "Beginner" || challengeDay != null,
+    val challengeName: String? = null
 )
 
 @Entity(
@@ -47,7 +50,16 @@ data class Exercise(
     val sets: Int,
     val restSeconds: Int,
     val instruction: String,
-    val durationSeconds: Int? = null
+    val durationSeconds: Int? = null,
+    val description: String = "A guided bodyweight movement.",
+    val muscleGroup: String = "Full Body",
+    val difficulty: String = "Beginner",
+    val equipment: String = "No equipment",
+    val imageResName: String = "exercise_placeholder",
+    val localVideoName: String = "",
+    val caloriesPerMinute: Int = 6,
+    val safetyTips: String = "Stop if you feel pain. Keep your movement controlled.",
+    val commonMistakes: String = "Avoid rushing repetitions or losing alignment."
 )
 
 @Entity(
@@ -61,6 +73,41 @@ data class CompletedWorkout(
     val completedAt: Long,
     val caloriesBurned: Int,
     val durationMinutes: Int
+)
+
+@Entity(tableName = "premium_status")
+data class PremiumStatus(@PrimaryKey val id: Int = 1, val isPremiumUser: Boolean = false)
+
+@Entity(tableName = "water_logs")
+data class WaterLog(@PrimaryKey val date: String, val amountMl: Int = 0, val goalMl: Int = 2500)
+
+@Entity(tableName = "health_metrics")
+data class HealthMetric(
+    @PrimaryKey val id: Int = 1,
+    val bmi: Float = 0f,
+    val bmr: Float = 0f,
+    val calorieNeeds: Float = 0f,
+    val waterMl: Int = 0,
+    val idealWeightMin: Float = 0f,
+    val idealWeightMax: Float = 0f
+)
+
+@Entity(tableName = "reminder_settings")
+data class ReminderSettings(
+    @PrimaryKey val id: Int = 1,
+    val workoutTime: String = "07:00",
+    val waterReminder: Boolean = true,
+    val mealReminder: Boolean = false
+)
+
+@Entity(tableName = "custom_workout_plans")
+data class CustomWorkoutPlan(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val goal: String,
+    val level: String,
+    val availableMinutes: Int,
+    val equipment: String,
+    val generatedTitle: String
 )
 
 data class WorkoutPlanWithExercises(
