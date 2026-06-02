@@ -12,6 +12,11 @@ import com.example.fitnessworkout.data.model.CustomWorkoutPlan
 import com.example.fitnessworkout.data.model.HealthMetric
 import com.example.fitnessworkout.data.model.ReminderSettings
 import com.example.fitnessworkout.data.model.WaterLog
+import com.example.fitnessworkout.data.model.Achievement
+import com.example.fitnessworkout.data.model.BodyMeasurement
+import com.example.fitnessworkout.data.model.FitnessTestResult
+import com.example.fitnessworkout.data.model.ProgressPhoto
+import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import com.example.fitnessworkout.repository.FitnessRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -43,6 +48,12 @@ data class FitnessUiState(
     val healthMetric: HealthMetric? = null,
     val reminders: ReminderSettings = ReminderSettings(),
     val customPlans: List<CustomWorkoutPlan> = emptyList()
+    ,
+    val measurements: List<BodyMeasurement> = emptyList(),
+    val photos: List<ProgressPhoto> = emptyList(),
+    val achievements: List<Achievement> = emptyList(),
+    val fitnessTests: List<FitnessTestResult> = emptyList(),
+    val shareSummaries: List<ShareableWorkoutSummary> = emptyList()
 ) {
     val standardPlans get() = plans.filter { it.challengeDay == null }
     val challengePlans get() = plans.filter { it.challengeDay != null }.sortedBy { it.challengeDay }
@@ -63,6 +74,7 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         repository.healthMetric,
         repository.reminders,
         repository.customPlans
+        , repository.measurements, repository.photos, repository.achievements, repository.fitnessTests, repository.shareSummaries
     ) { values ->
         val user = values[0] as UserProfile?
         @Suppress("UNCHECKED_CAST") val plans = values[1] as List<WorkoutPlan>
@@ -72,6 +84,11 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         val healthMetric = values[5] as HealthMetric?
         val reminders = values[6] as ReminderSettings?
         @Suppress("UNCHECKED_CAST") val customPlans = values[7] as List<CustomWorkoutPlan>
+        @Suppress("UNCHECKED_CAST") val measurements = values[8] as List<BodyMeasurement>
+        @Suppress("UNCHECKED_CAST") val photos = values[9] as List<ProgressPhoto>
+        @Suppress("UNCHECKED_CAST") val achievements = values[10] as List<Achievement>
+        @Suppress("UNCHECKED_CAST") val fitnessTests = values[11] as List<FitnessTestResult>
+        @Suppress("UNCHECKED_CAST") val shareSummaries = values[12] as List<ShareableWorkoutSummary>
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -85,7 +102,8 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             water = water ?: WaterLog(LocalDate.now().toString()),
             healthMetric = healthMetric,
             reminders = reminders ?: ReminderSettings(),
-            customPlans = customPlans
+            customPlans = customPlans, measurements = measurements, photos = photos, achievements = achievements,
+            fitnessTests = fitnessTests, shareSummaries = shareSummaries
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FitnessUiState())
 
@@ -105,9 +123,12 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         selectedPlanId.value = planId
     }
 
-    fun saveUser(name: String, age: Int, weight: Float, height: Float, goal: String, darkMode: Boolean = uiState.value.user?.darkMode ?: false) {
+    fun saveUser(name: String, age: Int, weight: Float, height: Float, goal: String, darkMode: Boolean = uiState.value.user?.darkMode ?: false,
+        level: String = uiState.value.user?.fitnessLevel ?: "Beginner", minutes: Int = uiState.value.user?.availableMinutes ?: 20,
+        equipment: String = uiState.value.user?.equipment ?: "No Equipment", style: String = uiState.value.user?.workoutStyle ?: "Balanced") {
         viewModelScope.launch {
-            repository.saveUser(UserProfile(name = name, age = age, weightKg = weight, heightCm = height, fitnessGoal = goal, darkMode = darkMode))
+            repository.saveUser(UserProfile(name = name, age = age, weightKg = weight, heightCm = height, fitnessGoal = goal, darkMode = darkMode,
+                fitnessLevel = level, availableMinutes = minutes, equipment = equipment, workoutStyle = style))
         }
     }
 
@@ -117,7 +138,7 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
 
     fun completeSelectedWorkout() {
         selectedPlan.value?.let { plan ->
-            viewModelScope.launch { repository.completeWorkout(plan) }
+            viewModelScope.launch { repository.completeWorkout(plan, uiState.value.streak) }
         }
     }
 
@@ -139,8 +160,20 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
                 waterMl = (weightKg * 35).toInt(), idealWeightMin = 18.5f * meters * meters, idealWeightMax = 24.9f * meters * meters))
         }
     }
-    fun generateCustomPlan(goal: String, level: String, minutes: Int, equipment: String) =
-        viewModelScope.launch { repository.saveCustomPlan(CustomWorkoutPlan(goal = goal, level = level, availableMinutes = minutes, equipment = equipment, generatedTitle = "$minutes-min $goal plan")) }
+    fun generateCustomPlan(goal: String, level: String, minutes: Int, equipment: String, bodyFocus: String = "Full Body") =
+        viewModelScope.launch { repository.saveCustomPlan(CustomWorkoutPlan(goal = goal, level = level, availableMinutes = minutes, equipment = equipment, generatedTitle = "$minutes-min $bodyFocus $goal plan", bodyFocus = bodyFocus)) }
+    fun saveMeasurement(item: BodyMeasurement) = viewModelScope.launch {
+        if (uiState.value.isPremiumUser || uiState.value.measurements.size < 3) repository.saveMeasurement(item)
+    }
+    fun savePhoto(uri: String) = viewModelScope.launch {
+        if (uiState.value.isPremiumUser || uiState.value.photos.size < 2) repository.savePhoto(ProgressPhoto(imageUri = uri))
+    }
+    fun deletePhoto(id: Int) = viewModelScope.launch { repository.deletePhoto(id) }
+    fun saveFitnessTest(pushUps: Int, plank: Int, squats: Int, heartRate: Int) = viewModelScope.launch {
+        val score = pushUps + plank / 10 + squats - (heartRate - 60).coerceAtLeast(0) / 2
+        repository.saveFitnessTest(FitnessTestResult(pushUps = pushUps, plankSeconds = plank, squats = squats, restingHeartRate = heartRate, score = score))
+    }
+    fun deleteAllData() = viewModelScope.launch { repository.deleteAllData() }
 
     private fun isCurrentWeek(timestamp: Long): Boolean {
         val date = timestamp.toDate()

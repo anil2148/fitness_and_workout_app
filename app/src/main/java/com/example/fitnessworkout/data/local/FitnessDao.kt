@@ -14,6 +14,11 @@ import com.example.fitnessworkout.data.model.HealthMetric
 import com.example.fitnessworkout.data.model.PremiumStatus
 import com.example.fitnessworkout.data.model.ReminderSettings
 import com.example.fitnessworkout.data.model.WaterLog
+import com.example.fitnessworkout.data.model.Achievement
+import com.example.fitnessworkout.data.model.BodyMeasurement
+import com.example.fitnessworkout.data.model.FitnessTestResult
+import com.example.fitnessworkout.data.model.ProgressPhoto
+import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -77,6 +82,45 @@ interface FitnessDao {
 
     @Insert
     suspend fun insertCustomPlan(plan: CustomWorkoutPlan)
+
+    @Query("SELECT * FROM body_measurements ORDER BY recordedAt DESC")
+    fun observeMeasurements(): Flow<List<BodyMeasurement>>
+
+    @Insert suspend fun insertMeasurement(item: BodyMeasurement)
+
+    @Query("SELECT * FROM progress_photos ORDER BY createdAt DESC")
+    fun observePhotos(): Flow<List<ProgressPhoto>>
+
+    @Insert suspend fun insertPhoto(item: ProgressPhoto)
+    @Query("DELETE FROM progress_photos WHERE id = :id") suspend fun deletePhoto(id: Int)
+
+    @Query("SELECT * FROM achievements ORDER BY unlockedAt DESC")
+    fun observeAchievements(): Flow<List<Achievement>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertAchievement(item: Achievement)
+
+    @Query("SELECT * FROM fitness_test_results ORDER BY recordedAt DESC")
+    fun observeFitnessTests(): Flow<List<FitnessTestResult>>
+
+    @Insert suspend fun insertFitnessTest(item: FitnessTestResult)
+
+    @Query("SELECT * FROM shareable_workout_summaries ORDER BY completedAt DESC")
+    fun observeShareSummaries(): Flow<List<ShareableWorkoutSummary>>
+
+    @Insert suspend fun insertShareSummary(item: ShareableWorkoutSummary)
+
+    @Query("DELETE FROM user_profile") suspend fun deleteUsers()
+    @Query("DELETE FROM completed_workouts") suspend fun deleteWorkouts()
+    @Query("DELETE FROM body_measurements") suspend fun deleteMeasurements()
+    @Query("DELETE FROM progress_photos") suspend fun deletePhotos()
+    @Query("DELETE FROM achievements") suspend fun deleteAchievements()
+    @Query("DELETE FROM fitness_test_results") suspend fun deleteFitnessTests()
+    @Query("DELETE FROM shareable_workout_summaries") suspend fun deleteShareSummaries()
+    @Query("DELETE FROM water_logs") suspend fun deleteWaterLogs()
+    @Query("DELETE FROM health_metrics") suspend fun deleteHealthMetrics()
+    @Query("DELETE FROM reminder_settings") suspend fun deleteReminderSettings()
+    @Query("DELETE FROM custom_workout_plans") suspend fun deleteCustomPlans()
+    @Query("DELETE FROM premium_status") suspend fun deletePremiumStatus()
 
     @Query("SELECT COUNT(*) FROM workout_plans")
     suspend fun planCount(): Int

@@ -11,6 +11,11 @@ import com.example.fitnessworkout.data.model.HealthMetric
 import com.example.fitnessworkout.data.model.PremiumStatus
 import com.example.fitnessworkout.data.model.ReminderSettings
 import com.example.fitnessworkout.data.model.WaterLog
+import com.example.fitnessworkout.data.model.Achievement
+import com.example.fitnessworkout.data.model.BodyMeasurement
+import com.example.fitnessworkout.data.model.FitnessTestResult
+import com.example.fitnessworkout.data.model.ProgressPhoto
+import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import java.time.LocalDate
 
 class FitnessRepository(private val dao: FitnessDao) {
@@ -22,6 +27,11 @@ class FitnessRepository(private val dao: FitnessDao) {
     val healthMetric = dao.observeHealthMetric()
     val reminders = dao.observeReminders()
     val customPlans = dao.observeCustomPlans()
+    val measurements = dao.observeMeasurements()
+    val photos = dao.observePhotos()
+    val achievements = dao.observeAchievements()
+    val fitnessTests = dao.observeFitnessTests()
+    val shareSummaries = dao.observeShareSummaries()
 
     fun exercises(planId: Int) = dao.observeExercises(planId)
 
@@ -33,15 +43,18 @@ class FitnessRepository(private val dao: FitnessDao) {
 
     suspend fun saveUser(user: UserProfile) = dao.upsertUser(user)
 
-    suspend fun completeWorkout(plan: WorkoutPlan) = dao.insertCompletedWorkout(
-        CompletedWorkout(
+    suspend fun completeWorkout(plan: WorkoutPlan, streak: Int) {
+        dao.insertCompletedWorkout(CompletedWorkout(
             planId = plan.id,
             planTitle = plan.title,
             completedAt = System.currentTimeMillis(),
             caloriesBurned = plan.estimatedCalories,
             durationMinutes = plan.durationMinutes
-        )
-    )
+        ))
+        dao.insertShareSummary(ShareableWorkoutSummary(workoutTitle = plan.title, caloriesBurned = plan.estimatedCalories, durationMinutes = plan.durationMinutes, streak = streak + 1))
+        dao.insertAchievement(Achievement("first_workout", "First Step", "Completed your first workout"))
+        if (streak + 1 >= 7) dao.insertAchievement(Achievement("seven_day_streak", "Week Warrior", "Maintained a 7-day workout streak"))
+    }
 
     suspend fun resetProgress() = dao.resetProgress()
 
@@ -53,4 +66,17 @@ class FitnessRepository(private val dao: FitnessDao) {
     suspend fun saveHealthMetric(metric: HealthMetric) = dao.upsertHealthMetric(metric)
     suspend fun saveReminders(settings: ReminderSettings) = dao.upsertReminders(settings)
     suspend fun saveCustomPlan(plan: CustomWorkoutPlan) = dao.insertCustomPlan(plan)
+    suspend fun saveMeasurement(item: BodyMeasurement) = dao.insertMeasurement(item)
+    suspend fun savePhoto(item: ProgressPhoto) = dao.insertPhoto(item)
+    suspend fun deletePhoto(id: Int) = dao.deletePhoto(id)
+    suspend fun saveFitnessTest(item: FitnessTestResult) {
+        dao.insertFitnessTest(item)
+        dao.insertAchievement(Achievement("fitness_test", "Benchmark Set", "Completed a fitness level test"))
+    }
+    suspend fun deleteAllData() {
+        dao.deleteUsers(); dao.deleteWorkouts(); dao.deleteMeasurements(); dao.deletePhotos()
+        dao.deleteAchievements(); dao.deleteFitnessTests(); dao.deleteShareSummaries()
+        dao.deleteWaterLogs(); dao.deleteHealthMetrics(); dao.deleteReminderSettings(); dao.deleteCustomPlans()
+        dao.deletePremiumStatus()
+    }
 }

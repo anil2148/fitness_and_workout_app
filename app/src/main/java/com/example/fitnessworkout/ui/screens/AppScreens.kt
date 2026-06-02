@@ -93,6 +93,10 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var weight by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
     var selectedGoal by remember { mutableStateOf(goals.first()) }
+    var level by remember { mutableStateOf("Beginner") }
+    var minutes by remember { mutableIntStateOf(20) }
+    var equipment by remember { mutableStateOf("No Equipment") }
+    var style by remember { mutableStateOf("Balanced") }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -112,16 +116,24 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
                 }
             }
         }
+        item { OnboardingChoices("Fitness level", listOf("Beginner", "Intermediate", "Advanced"), level) { level = it } }
+        item { OnboardingChoices("Available time", listOf(10, 20, 30, 45).map { "$it min" }, "$minutes min") { minutes = it.substringBefore(" ").toInt() } }
+        item { OnboardingChoices("Equipment", listOf("No Equipment", "Dumbbells", "Resistance Band", "Gym"), equipment) { equipment = it } }
+        item { OnboardingChoices("Workout style", listOf("Balanced", "Strength", "Cardio", "Mobility", "HIIT"), style) { style = it } }
         item {
             Button(
                 onClick = {
-                    viewModel.saveUser(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal)
+                    viewModel.saveUser(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal, level = level, minutes = minutes, equipment = equipment, style = style)
                 },
                 enabled = name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) { Text("Create my fitness plan") }
         }
     }
+}
+
+@Composable private fun OnboardingChoices(title: String, options: List<String>, selected: String, choose: (String) -> Unit) {
+    Column { Text(title, fontWeight = FontWeight.Bold); Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { options.forEach { FilterChip(selected == it, { choose(it) }, label = { Text(it) }) } } }
 }
 
 @Composable
@@ -245,7 +257,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
+fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinished: () -> Unit = onBack) {
     val plan by viewModel.selectedPlan.collectAsState()
     val exercises by viewModel.selectedExercises.collectAsState()
     val completed = remember(plan?.id) { mutableStateListOf<Int>() }
@@ -298,7 +310,7 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
                 Button(
                     onClick = {
                         viewModel.completeSelectedWorkout()
-                        onBack()
+                        onFinished()
                     },
                     enabled = exercises.isNotEmpty() && completed.size == exercises.size,
                     modifier = Modifier.fillMaxWidth().height(54.dp)
@@ -410,7 +422,10 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
         }
         item {
             listOf("water" to "Water tracker", "calculators" to "Health calculators", "diet" to "Diet guidance",
-                "custom" to "Custom workout plan", "reminders" to "Daily reminders").forEach { (route, label) ->
+                "custom" to "AI-style custom plan", "reminders" to "Smart reminders", "measurements" to "Body measurements",
+                "photos" to "Progress photos", "achievements" to "Achievements", "fitness-test" to "Fitness level test",
+                "share" to "Workout share card", "privacy" to "Privacy policy", "terms" to "Terms",
+                "medical" to "Medical disclaimer", "feedback" to "Feedback", "delete-data" to "Delete all data").forEach { (route, label) ->
                 OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
             }
         }

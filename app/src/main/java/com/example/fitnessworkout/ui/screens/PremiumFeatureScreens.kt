@@ -66,24 +66,26 @@ import com.example.fitnessworkout.viewmodel.FitnessViewModel
 @Composable fun CustomPlanScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
     if (!state.isPremiumUser) return LockedFeature("Custom workout plans", premium, back)
-    var goal by remember { mutableStateOf("Stay Fit") }; var level by remember { mutableStateOf("Beginner") }; var minutes by remember { mutableStateOf(20) }; var equipment by remember { mutableStateOf("No Equipment") }
+    var goal by remember { mutableStateOf("Stay Fit") }; var level by remember { mutableStateOf("Beginner") }; var minutes by remember { mutableStateOf(20) }; var equipment by remember { mutableStateOf("No Equipment") }; var focus by remember { mutableStateOf("Full Body") }
     FeaturePage("Custom plan builder", back) {
         Choice("Goal", goal, listOf("Lose Weight", "Build Muscle", "Stay Fit", "Improve Stamina")) { goal = it }
         Choice("Level", level, listOf("Beginner", "Intermediate", "Advanced")) { level = it }
         Choice("Time", "$minutes min", listOf("10 min", "20 min", "30 min", "45 min")) { minutes = it.substringBefore(" ").toInt() }
         Choice("Equipment", equipment, listOf("No Equipment", "Dumbbells", "Resistance Band", "Gym")) { equipment = it }
-        Button({ vm.generateCustomPlan(goal, level, minutes, equipment) }, Modifier.fillMaxWidth()) { Text("Generate local plan") }
-        state.customPlans.forEach { Text("• ${it.generatedTitle} • ${it.level} • ${it.equipment}") }
+        Choice("Body focus", focus, listOf("Full Body", "Chest", "Back", "Legs", "Shoulders", "Arms", "Abs", "Cardio")) { focus = it }
+        Button({ vm.generateCustomPlan(goal, level, minutes, equipment, focus) }, Modifier.fillMaxWidth()) { Text("Generate AI-style local plan") }
+        state.customPlans.forEach { Text("• ${it.generatedTitle} • ${it.level} • ${it.equipment} • ${it.bodyFocus}") }
     }
 }
 
 @Composable fun ReminderScreen(vm: FitnessViewModel, back: () -> Unit) {
-    val state by vm.uiState.collectAsState(); var time by remember(state.reminders) { mutableStateOf(state.reminders.workoutTime) }; var water by remember(state.reminders) { mutableStateOf(state.reminders.waterReminder) }; var meal by remember(state.reminders) { mutableStateOf(state.reminders.mealReminder) }
+    val state by vm.uiState.collectAsState(); var time by remember(state.reminders) { mutableStateOf(state.reminders.workoutTime) }; var water by remember(state.reminders) { mutableStateOf(state.reminders.waterReminder) }; var meal by remember(state.reminders) { mutableStateOf(state.reminders.mealReminder) }; var weight by remember(state.reminders) { mutableStateOf(state.reminders.weightCheckIn) }; var photoDay by remember(state.reminders) { mutableStateOf(state.reminders.progressPhotoDay) }
     FeaturePage("Daily reminders", back) {
         Field(time, { time = it }, "Workout reminder time")
-        Toggle("Water reminder", water) { water = it }; Toggle("Meal reminder", meal) { meal = it }
+        Toggle("Water reminder", water) { water = it }; Toggle("Meal reminder", meal) { meal = it }; Toggle("Weight check-in", weight) { weight = it }
+        Choice("Progress photo day", photoDay, listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")) { photoDay = it }
         // TODO: Schedule local notifications with WorkManager after notification permission UX is added.
-        Button({ vm.saveReminders(ReminderSettings(workoutTime = time, waterReminder = water, mealReminder = meal)) }, Modifier.fillMaxWidth()) { Text("Save reminder preferences") }
+        Button({ vm.saveReminders(ReminderSettings(workoutTime = time, waterReminder = water, mealReminder = meal, weightCheckIn = weight, progressPhotoDay = photoDay)) }, Modifier.fillMaxWidth()) { Text("Save reminder preferences") }
     }
 }
 

@@ -34,6 +34,16 @@ import com.example.fitnessworkout.ui.screens.CustomPlanScreen
 import com.example.fitnessworkout.ui.screens.DietScreen
 import com.example.fitnessworkout.ui.screens.ReminderScreen
 import com.example.fitnessworkout.ui.screens.WaterScreen
+import com.example.fitnessworkout.ui.screens.AchievementScreen
+import com.example.fitnessworkout.ui.screens.DeleteAllDataScreen
+import com.example.fitnessworkout.ui.screens.FeedbackScreen
+import com.example.fitnessworkout.ui.screens.FitnessTestScreen
+import com.example.fitnessworkout.ui.screens.MeasurementTrackerScreen
+import com.example.fitnessworkout.ui.screens.MedicalDisclaimerScreen
+import com.example.fitnessworkout.ui.screens.PrivacyPolicyScreen
+import com.example.fitnessworkout.ui.screens.ProgressPhotosScreen
+import com.example.fitnessworkout.ui.screens.ShareWorkoutScreen
+import com.example.fitnessworkout.ui.screens.TermsScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -76,7 +86,9 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("detail/{planId}") { entry ->
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
-                WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() })
+                WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() }, onFinished = {
+                    navController.navigate("share") { popUpTo("workouts") }
+                })
             }
             composable("premium") { PremiumScreen(viewModel, onBack = { navController.popBackStack() }) }
             composable("water") { WaterScreen(viewModel) { navController.popBackStack() } }
@@ -84,6 +96,16 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("diet") { DietScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
             composable("custom") { CustomPlanScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
             composable("reminders") { ReminderScreen(viewModel) { navController.popBackStack() } }
+            composable("measurements") { MeasurementTrackerScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("photos") { ProgressPhotosScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("achievements") { AchievementScreen(viewModel) { navController.popBackStack() } }
+            composable("fitness-test") { FitnessTestScreen(viewModel) { navController.popBackStack() } }
+            composable("share") { ShareWorkoutScreen(viewModel) { navController.popBackStack() } }
+            composable("privacy") { PrivacyPolicyScreen { navController.popBackStack() } }
+            composable("terms") { TermsScreen { navController.popBackStack() } }
+            composable("medical") { MedicalDisclaimerScreen { navController.popBackStack() } }
+            composable("feedback") { FeedbackScreen { navController.popBackStack() } }
+            composable("delete-data") { DeleteAllDataScreen(viewModel) { navController.popBackStack() } }
         }
     }
 }

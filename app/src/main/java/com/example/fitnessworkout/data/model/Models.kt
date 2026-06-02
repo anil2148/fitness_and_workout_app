@@ -13,7 +13,11 @@ data class UserProfile(
     val weightKg: Float,
     val heightCm: Float,
     val fitnessGoal: String,
-    val darkMode: Boolean = false
+    val darkMode: Boolean = false,
+    val fitnessLevel: String = "Beginner",
+    val availableMinutes: Int = 20,
+    val equipment: String = "No Equipment",
+    val workoutStyle: String = "Balanced"
 ) {
     val bmi: Float get() = if (heightCm > 0) weightKg / ((heightCm / 100) * (heightCm / 100)) else 0f
 }
@@ -97,7 +101,9 @@ data class ReminderSettings(
     @PrimaryKey val id: Int = 1,
     val workoutTime: String = "07:00",
     val waterReminder: Boolean = true,
-    val mealReminder: Boolean = false
+    val mealReminder: Boolean = false,
+    val weightCheckIn: Boolean = true,
+    val progressPhotoDay: String = "Sunday"
 )
 
 @Entity(tableName = "custom_workout_plans")
@@ -107,7 +113,58 @@ data class CustomWorkoutPlan(
     val level: String,
     val availableMinutes: Int,
     val equipment: String,
-    val generatedTitle: String
+    val generatedTitle: String,
+    val bodyFocus: String = "Full Body"
+)
+
+@Entity(tableName = "body_measurements")
+data class BodyMeasurement(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val recordedAt: Long = System.currentTimeMillis(),
+    val weightKg: Float,
+    val waistCm: Float = 0f,
+    val chestCm: Float = 0f,
+    val armsCm: Float = 0f,
+    val thighsCm: Float = 0f,
+    val hipsCm: Float = 0f,
+    val bodyFatPercent: Float = 0f
+)
+
+@Entity(tableName = "progress_photos")
+data class ProgressPhoto(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+    val imageUri: String,
+    val label: String = "Progress photo"
+)
+
+@Entity(tableName = "achievements")
+data class Achievement(
+    @PrimaryKey val code: String,
+    val title: String,
+    val description: String,
+    val unlockedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "fitness_test_results")
+data class FitnessTestResult(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val recordedAt: Long = System.currentTimeMillis(),
+    val pushUps: Int,
+    val plankSeconds: Int,
+    val squats: Int,
+    val restingHeartRate: Int,
+    val score: Int
+)
+
+@Entity(tableName = "shareable_workout_summaries")
+data class ShareableWorkoutSummary(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val completedAt: Long = System.currentTimeMillis(),
+    val workoutTitle: String,
+    val caloriesBurned: Int,
+    val durationMinutes: Int,
+    val streak: Int
 )
 
 data class WorkoutPlanWithExercises(

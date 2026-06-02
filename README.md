@@ -16,6 +16,13 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Premium challenges for fat loss, muscle gain, and abs plus a free beginner challenge
 - Exercise visual and video placeholders with safety tips, equipment, muscle groups, and common mistakes
 - Dark mode preference, reusable ad placeholder, and advanced progress summary
+- AI-style local workout generator with goal, level, time, equipment, and body-focus inputs
+- Body measurement history for weight, waist, chest, arms, thighs, hips, and body fat
+- Local progress photo picker with before-and-after comparison and Premium limits
+- Achievement badges, streak rewards, fitness tests, and workout share cards
+- Smart reminders for workouts, water, meals, weight check-ins, and progress photos
+- Privacy policy, terms, medical disclaimer, feedback, and local delete-all-data screens
+- Improved onboarding for goal, level, available time, equipment, age, height, weight, and workout style
 - Material 3 UI with a responsive scrollable layout, rounded cards, icons, and simple animations
 
 ## Tech Stack
@@ -24,6 +31,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Jetpack Compose and Material 3
 - MVVM architecture
 - Room database
+- DataStore preferences
 - Repository pattern
 - Navigation Compose
 - Kotlin Coroutines and Flow
