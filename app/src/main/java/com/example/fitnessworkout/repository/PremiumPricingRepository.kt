@@ -12,14 +12,14 @@ import com.example.fitnessworkout.data.model.SubscriptionPlanUi
  * TODO: Verify purchase success before granting Premium entitlement.
  * TODO: Restore purchases and expose subscription renewal status.
  */
-class PremiumPricingRepository {
-    private var selectedKey = planKey(MockPremiumPlans.subscriptionPlans.first { it.isSelected })
+class PremiumPricingRepository(private val currencyCode: String = "USD") {
+    private var selectedKey = planKey(MockPremiumPlans.subscriptionPlans(currencyCode).first { it.isSelected })
 
     fun getSubscriptionPlans(): List<SubscriptionPlanUi> =
-        MockPremiumPlans.subscriptionPlans.map(::withSelection)
+        MockPremiumPlans.subscriptionPlans(currencyCode).map(::withSelection)
 
     fun getPromotionalPlans(): List<SubscriptionPlanUi> =
-        MockPremiumPlans.promotionalPlans.map(::withSelection)
+        MockPremiumPlans.promotionalPlans(currencyCode).map(::withSelection)
 
     fun getBestValuePlan(): SubscriptionPlanUi? =
         getSubscriptionPlans().firstOrNull { it.isBestValue }

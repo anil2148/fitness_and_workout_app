@@ -1,8 +1,8 @@
 package com.example.fitnessworkout.data.model
 
 /**
- * Display-ready Premium pricing. Production values should come from Google Play ProductDetails,
- * never from Compose code.
+ * Mock Premium pricing. Production values and formatted prices should come from Google Play
+ * ProductDetails, never from Compose code.
  */
 data class SubscriptionPlanUi(
     val productId: String,
@@ -10,9 +10,10 @@ data class SubscriptionPlanUi(
     val offerId: String? = null,
     val title: String,
     val description: String,
-    val priceText: String,
+    val priceAmount: Double,
+    val currencyCode: String,
     val billingPeriodText: String,
-    val originalPriceText: String? = null,
+    val originalPriceAmount: Double? = null,
     val discountText: String? = null,
     val trialText: String? = null,
     val offerBadge: String? = null,

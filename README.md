@@ -177,6 +177,12 @@ Use only owned, licensed, royalty-free, or AI-generated media that you have righ
 - Progress photos use local picker URIs and are not uploaded or cloud backed up.
 - The generated APK is a debug build. Create a signed release bundle before Play Store submission.
 
+## Localization And Regional Pricing
+
+The app supports English, Hindi, Spanish, French, and Arabic with safe English fallback text for incomplete translations. Language changes persist and recreate the visible app UI. Arabic enables RTL layout direction through Android configuration.
+
+Global Settings stores country, currency, and units separately. Country selection supplies a sensible default, while currency and units can be overridden independently. Premium prices are numeric local mock values formatted at runtime for the selected currency and app locale. Google Play Billing `ProductDetails` must replace these preview values before release.
+
 ## Troubleshooting
 
 - Confirm Java 17 is active with `java -version`.

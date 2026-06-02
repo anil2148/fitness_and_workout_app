@@ -48,10 +48,21 @@ Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` 
 ## Language
 
 - [ ] Change English to Hindi in Global Settings and confirm visible labels refresh.
+- [ ] Confirm Home, Profile, Settings, Premium, workout detail, workout player, calculator, and tracker labels refresh.
 - [ ] Restart the app and confirm Hindi remains selected.
 - [ ] Change Hindi back to English and restart.
 - [ ] Change to Arabic and confirm the app does not crash.
 - [ ] Confirm Arabic layout direction updates where supported.
+- [ ] Confirm any untranslated secondary content safely falls back to English.
+
+## Country, Currency, And Units
+
+- [ ] Select India and save settings; confirm the default currency changes to `INR` and units change to Metric.
+- [ ] Open Premium and confirm mock amounts use the rupee symbol and India mock amounts.
+- [ ] Select United States and save settings; confirm `USD` and Imperial defaults.
+- [ ] Select France and save settings; confirm `EUR` and Metric defaults.
+- [ ] Override the currency independently and confirm Premium pricing updates without changing the app language.
+- [ ] Override the unit system independently and confirm supported weight, height, and water displays update.
 
 ## Settings And Legal
 

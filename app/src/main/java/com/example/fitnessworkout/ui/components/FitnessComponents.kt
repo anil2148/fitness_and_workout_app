@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.example.fitnessworkout.data.model.WorkoutPlan
 import com.example.fitnessworkout.ui.theme.FitnessBlack
 import com.example.fitnessworkout.ui.theme.FitnessGreen
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 
 @Composable
 fun SectionTitle(title: String, subtitle: String? = null) {
@@ -59,9 +61,9 @@ fun WorkoutPlanCard(plan: WorkoutPlan, onClick: () -> Unit, modifier: Modifier =
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(plan.title, fontWeight = FontWeight.Bold)
-                Text("${plan.category} | ${plan.durationMinutes} min | ${plan.estimatedCalories} kcal", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.plan_summary, plan.category, plan.durationMinutes, plan.estimatedCalories), style = MaterialTheme.typography.bodySmall)
             }
-            if (locked) Icon(Icons.Default.Lock, "Premium locked", tint = MaterialTheme.colorScheme.primary)
+            if (locked) Icon(Icons.Default.Lock, stringResource(R.string.premium_locked), tint = MaterialTheme.colorScheme.primary)
             else Text(plan.level.take(1), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
     }
@@ -90,9 +92,9 @@ fun AdBannerPlaceholder(modifier: Modifier = Modifier) {
     ) {
         Icon(Icons.Default.Bolt, null, tint = FitnessGreen)
         Column {
-            Text("Ad space", color = Color.White, fontWeight = FontWeight.Bold)
-            Text("Reserved for a future fitness partner", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
-            Text("Rewarded workout unlock placeholder", color = FitnessGreen, style = MaterialTheme.typography.labelSmall)
+            Text(stringResource(R.string.ad_space), color = Color.White, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.ad_space_body), color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.reward_unlock_placeholder), color = FitnessGreen, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -101,8 +103,8 @@ fun AdBannerPlaceholder(modifier: Modifier = Modifier) {
 fun ChallengeProgress(completed: Int, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("30-Day Challenge", fontWeight = FontWeight.Bold)
-            Text("$completed / 30", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.challenge_30), fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.challenge_progress_value, completed), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
         LinearProgressIndicator(progress = { completed / 30f }, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)))
     }

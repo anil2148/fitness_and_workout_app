@@ -21,52 +21,64 @@ import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import androidx.compose.ui.res.stringResource
 import com.example.fitnessworkout.R
 import com.example.fitnessworkout.utils.AppLocaleManager
+import com.example.fitnessworkout.utils.CurrencyFormatter
+import com.example.fitnessworkout.utils.RegionSettings
+import com.example.fitnessworkout.ui.components.localizedOption
 
 @Composable fun SettingsScreen(vm: FitnessViewModel, back: () -> Unit, navigate: (String) -> Unit) {
     val context = LocalContext.current
     val state by vm.uiState.collectAsState(); var settings by remember(state.settings) { mutableStateOf(state.settings) }
     GlobalPage(stringResource(R.string.settings_title), back) {
-        Choice(stringResource(R.string.country_region), settings.country, countries) { settings = settings.copy(country = it, unitSystem = Units.defaultSystem(it)) }
+        Choice(stringResource(R.string.country_region), settings.country, RegionSettings.supportedCountries.map { it.label }) {
+            val selected = RegionSettings.country(it)
+            settings = settings.copy(
+                country = selected.label,
+                selectedCountryCode = selected.code,
+                selectedCurrencyCode = selected.currencyCode,
+                selectedUnitSystem = selected.unitSystem,
+                unitSystem = selected.unitSystem,
+            )
+        }
         LanguageChoice(settings.selectedLanguageCode) { code ->
             val updated = settings.copy(language = AppLocaleManager.languageName(code), selectedLanguageCode = code)
             settings = updated
             vm.saveSettings(updated) { AppLocaleManager.restartUi(context) }
         }
-        Choice(stringResource(R.string.unit_system), settings.unitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(unitSystem = it) }
+        Choice(stringResource(R.string.currency), settings.selectedCurrencyCode, RegionSettings.supportedCurrencyCodes) { settings = settings.copy(selectedCurrencyCode = RegionSettings.safeCurrencyCode(it)) }
+        Choice(stringResource(R.string.unit_system), settings.selectedUnitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(selectedUnitSystem = it, unitSystem = it) }
         Choice(stringResource(R.string.diet_preference), settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
         Choice(stringResource(R.string.workout_location), settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
         Toggle(stringResource(R.string.prefer_injury_safe), settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
         Toggle(stringResource(R.string.analytics_consent), settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
         Toggle(stringResource(R.string.cloud_sync_consent), settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
         Button({ vm.saveSettings(settings) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
-        Text("${if (state.isPremiumUser) stringResource(R.string.premium_member) else "Free"} • ${stringResource(R.string.app_version)}")
-        listOf("community" to "Community", "trainer" to "Trainer mode", "form-check" to "AI form check", "specialized" to "Specialized routines",
-            "calendar" to "Smart calendar", "recovery" to "Recovery score", "export-data" to "Export my data", "consent" to "Data consent",
-            "whats-new" to "What's new", "bug-report" to "Bug report", "daily-habits" to "Daily habits",
-            "fitness-reports" to "Fitness reports", "favorites" to "Favorite workouts", "privacy" to "Privacy policy",
-            "terms" to "Terms", "medical" to "Medical disclaimer", "delete-data" to "Delete all data").forEach { (route, label) ->
-            OutlinedButton({ navigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
+        Text("${if (state.isPremiumUser) stringResource(R.string.premium_member) else stringResource(R.string.free_member)} • ${stringResource(R.string.app_version)}")
+        listOf("community" to R.string.community, "trainer" to R.string.trainer_mode, "form-check" to R.string.ai_form_check, "specialized" to R.string.specialized_routines,
+            "calendar" to R.string.smart_calendar, "recovery" to R.string.recovery_score, "export-data" to R.string.export_my_data, "consent" to R.string.data_consent,
+            "whats-new" to R.string.whats_new, "bug-report" to R.string.bug_report, "daily-habits" to R.string.daily_habits,
+            "fitness-reports" to R.string.reports, "favorites" to R.string.favorite_workouts, "privacy" to R.string.privacy_policy,
+            "terms" to R.string.terms, "medical" to R.string.medical_disclaimer_title, "delete-data" to R.string.delete_all_data).forEach { (route, label) ->
+            OutlinedButton({ navigate(route) }, Modifier.fillMaxWidth()) { Text(stringResource(label)) }
         }
     }
 }
 
-@Composable fun CommunityScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); GlobalPage("Community", back) { Text("Local mock community feed"); state.communityPosts.forEach { Text("★ ${it.author}: ${it.message} • ${it.likes} likes") } } }
-@Composable fun TrainerModeScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) = PremiumPlaceholder(vm, "Trainer mode", "Trainer account • local client list • assign plans • view client progress", back, premium)
-@Composable fun FormCheckScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) = PremiumPlaceholder(vm, "AI form check", "Camera pose overlay placeholder • Keep your back straight\nTODO: Connect ML Kit or MediaPipe.", back, premium)
-@Composable fun SpecializedScreen(back: () -> Unit) = GlobalPage("Specialized routines", back) { Text("Desk Worker Fitness"); listOf("5-minute desk stretch", "Neck pain relief routine", "Lower back mobility", "Eye break reminders", "Posture reset", "Lunch break workout").forEach { Text("• $it") }; Text("Indian and global fitness"); listOf("Indian vegetarian fat loss", "Home workout without gym", "Walking + yoga", "Beginner belly fat", "Low impact", "No jumping", "Apartment friendly").forEach { Text("• $it") }; Text("General wellness routines only. These are not medical treatment.", style = MaterialTheme.typography.bodySmall) }
-@Composable fun CalendarScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); GlobalPage("Smart workout calendar", back) { Text("Completed workouts: ${state.history.size}"); Text("Tracks completed, missed, rest, challenge, measurement, and photo days."); (1..7).forEach { Text("Day $it • ${if (it <= state.weeklyCount) "Completed" else "Plan or rest"}") } } }
-@Composable fun RecoveryScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); var sleep by remember { mutableStateOf("") }; var soreness by remember { mutableStateOf("") }; var energy by remember { mutableStateOf("") }; var stress by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }; GlobalPage("Recovery score", back) { Num(sleep, { sleep = it }, "Sleep hours"); Num(soreness, { soreness = it }, "Soreness 1-10"); Num(energy, { energy = it }, "Energy 1-10"); Num(stress, { stress = it }, "Stress 1-10"); error?.let { Text(it, color = MaterialTheme.colorScheme.error) }; Button({ val hours = sleep.toFloatOrNull(); val sore = soreness.toIntOrNull(); val power = energy.toIntOrNull(); val pressure = stress.toIntOrNull(); if (hours == null || hours !in 0f..24f || sore !in 1..10 || power !in 1..10 || pressure !in 1..10) error = "Enter sleep from 0-24 hours and ratings from 1-10." else { vm.saveRecovery(hours, sore!!, power!!, pressure!!); error = null } }) { Text("Calculate recovery") }; state.recovery.firstOrNull()?.let { Text("Recommended: ${it.recommendation}", fontWeight = FontWeight.Bold) } } }
-@Composable fun ExportDataScreen(back: () -> Unit) = ComingSoonScreen("Export my data", "CSV / JSON export for local health and workout records.", back)
-@Composable fun ConsentScreen(back: () -> Unit) = GlobalPage("Data consent", back) { Text("Analytics and cloud sync are optional placeholders. Offline tracking remains available without consent.") }
-@Composable fun WhatsNewScreen(back: () -> Unit) = GlobalPage("What's new", back) { Text("Global settings, imperial units, localization packs, recovery scoring, specialized routines, community, and trainer placeholders.") }
-@Composable fun BugReportScreen(back: () -> Unit) = ComingSoonScreen("Bug report", "Connect the support form before production launch.", back)
-@Composable fun MonetizationScreen(back: () -> Unit) { val pricing = MockPremiumPlans.regionalPricing; GlobalPage("Regional pricing preview", back) { Text("Mock-only regional display models", fontWeight = FontWeight.Bold); pricing.forEach { Text("${it.currency}: ${it.monthly} monthly • ${it.yearly} yearly • ${it.lifetime} lifetime") }; Text("${MockPremiumPlans.promoCodeText} • ${MockPremiumPlans.referralDiscountText}"); Text("TODO: Replace display models with Google Play Billing ProductDetails and eligible offers.") } }
+@Composable fun CommunityScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); GlobalPage(stringResource(R.string.community), back) { Text(stringResource(R.string.community_body)); state.communityPosts.forEach { Text(stringResource(R.string.community_post, it.author, it.message, it.likes)) } } }
+@Composable fun TrainerModeScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) = PremiumPlaceholder(vm, stringResource(R.string.trainer_mode), stringResource(R.string.trainer_mode_body), back, premium)
+@Composable fun FormCheckScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) = PremiumPlaceholder(vm, stringResource(R.string.ai_form_check), stringResource(R.string.ai_form_check_body), back, premium)
+@Composable fun SpecializedScreen(back: () -> Unit) = GlobalPage(stringResource(R.string.specialized_routines), back) { Text(stringResource(R.string.specialized_body)); Text(stringResource(R.string.general_wellness_notice), style = MaterialTheme.typography.bodySmall) }
+@Composable fun CalendarScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); GlobalPage(stringResource(R.string.smart_calendar), back) { Text(stringResource(R.string.workouts_completed_value, state.history.size)); Text(stringResource(R.string.calendar_body)); (1..7).forEach { Text(stringResource(R.string.calendar_day, it, stringResource(if (it <= state.weeklyCount) R.string.completed else R.string.plan_or_rest))) } } }
+@Composable fun RecoveryScreen(vm: FitnessViewModel, back: () -> Unit) { val state by vm.uiState.collectAsState(); var sleep by remember { mutableStateOf("") }; var soreness by remember { mutableStateOf("") }; var energy by remember { mutableStateOf("") }; var stress by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }; val recoveryError = stringResource(R.string.recovery_error); GlobalPage(stringResource(R.string.recovery_score), back) { Num(sleep, { sleep = it }, stringResource(R.string.sleep_hours)); Num(soreness, { soreness = it }, stringResource(R.string.soreness_range)); Num(energy, { energy = it }, stringResource(R.string.energy_range)); Num(stress, { stress = it }, stringResource(R.string.stress_range)); error?.let { Text(it, color = MaterialTheme.colorScheme.error) }; Button({ val hours = sleep.toFloatOrNull(); val sore = soreness.toIntOrNull(); val power = energy.toIntOrNull(); val pressure = stress.toIntOrNull(); if (hours == null || hours !in 0f..24f || sore !in 1..10 || power !in 1..10 || pressure !in 1..10) error = recoveryError else { vm.saveRecovery(hours, sore!!, power!!, pressure!!); error = null } }) { Text(stringResource(R.string.calculate_recovery)) }; state.recovery.firstOrNull()?.let { Text(stringResource(R.string.recommended_value, it.recommendation), fontWeight = FontWeight.Bold) } } }
+@Composable fun ExportDataScreen(back: () -> Unit) = ComingSoonScreen(stringResource(R.string.export_my_data), stringResource(R.string.export_data_body), back)
+@Composable fun ConsentScreen(back: () -> Unit) = GlobalPage(stringResource(R.string.data_consent), back) { Text(stringResource(R.string.data_consent_body)) }
+@Composable fun WhatsNewScreen(back: () -> Unit) = GlobalPage(stringResource(R.string.whats_new), back) { Text(stringResource(R.string.whats_new_body)) }
+@Composable fun BugReportScreen(back: () -> Unit) = ComingSoonScreen(stringResource(R.string.bug_report), stringResource(R.string.bug_report_body), back)
+@Composable fun MonetizationScreen(back: () -> Unit) { val pricing = MockPremiumPlans.regionalPricing; GlobalPage(stringResource(R.string.regional_pricing_preview), back) { Text(stringResource(R.string.mock_regional_pricing), fontWeight = FontWeight.Bold); pricing.forEach { Text(stringResource(R.string.regional_price_row, it.currency, CurrencyFormatter.format(it.monthly, it.currency), CurrencyFormatter.format(it.yearly, it.currency), CurrencyFormatter.format(it.lifetime, it.currency))) }; Text(stringResource(R.string.referral_and_promo)); Text(stringResource(R.string.play_billing_todo)) } }
 
-@Composable private fun PremiumPlaceholder(vm: FitnessViewModel, title: String, text: String, back: () -> Unit, premium: () -> Unit) { val state by vm.uiState.collectAsState(); if (!state.isPremiumUser) GlobalPage(title, back) { Icon(Icons.Default.Lock, null); Text("Premium feature"); Button(premium) { Text("View Premium") } } else ComingSoonScreen(title, text, back) }
+@Composable private fun PremiumPlaceholder(vm: FitnessViewModel, title: String, text: String, back: () -> Unit, premium: () -> Unit) { val state by vm.uiState.collectAsState(); if (!state.isPremiumUser) GlobalPage(title, back) { Icon(Icons.Default.Lock, null); Text(stringResource(R.string.premium_feature)); Button(premium) { Text(stringResource(R.string.view_premium)) } } else ComingSoonScreen(title, text, back) }
 @Composable fun ComingSoonScreen(title: String, description: String, back: () -> Unit, premiumLocked: Boolean = false) = GlobalPage(title, back) { if (premiumLocked) Icon(Icons.Default.Lock, null); Text(stringResource(R.string.coming_soon), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(description) }
 @Composable private fun Toggle(label: String, checked: Boolean, change: (Boolean) -> Unit) = Row(Modifier.fillMaxWidth()) { Text(label, Modifier.weight(1f)); Switch(checked, change) }
-@Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text("$label: $value") }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(it) }, { change(it); open = false }) } } } }
+@Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.label_value, label, localizedOption(value))) }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(localizedOption(it)) }, { change(it); open = false }) } } } }
 @Composable private fun LanguageChoice(selectedCode: String, change: (String) -> Unit) = Choice(stringResource(R.string.language), AppLocaleManager.languageName(selectedCode), AppLocaleManager.supportedLanguages.map { it.label }) { change(AppLocaleManager.languageCode(it)) }
 @Composable private fun Num(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }
-private val countries = listOf("United States", "India", "Spain", "France", "United Arab Emirates", "Brazil", "United Kingdom")
+@OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }

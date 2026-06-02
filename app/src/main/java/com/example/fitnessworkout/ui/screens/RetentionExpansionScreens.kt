@@ -38,21 +38,26 @@ import com.example.fitnessworkout.ui.components.WorkoutPlanCard
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 
 @Composable
 fun DailyHabitScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState()
     var habit by remember(state.dailyHabit) { mutableStateOf(state.dailyHabit) }
-    ExpansionPage("Daily habits", back) {
-        item { Text("${habit.completionPercentage}% complete", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+    ExpansionPage(stringResource(R.string.daily_habits), back) {
+        item { Text(stringResource(R.string.percent_complete, habit.completionPercentage), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
         item { LinearProgressIndicator({ habit.completionPercentage / 100f }, Modifier.fillMaxWidth()) }
-        item { HabitToggle("Workout completed", habit.workoutCompleted) { habit = habit.copy(workoutCompleted = it) } }
-        item { HabitToggle("Water goal completed", habit.waterGoalCompleted) { habit = habit.copy(waterGoalCompleted = it) } }
-        item { HabitToggle("Steps placeholder", habit.stepsCompleted) { habit = habit.copy(stepsCompleted = it) } }
-        item { HabitToggle("Meal plan followed", habit.mealPlanFollowed) { habit = habit.copy(mealPlanFollowed = it) } }
-        item { HabitToggle("Sleep logged", habit.sleepLogged) { habit = habit.copy(sleepLogged = it) } }
-        item { HabitToggle("Stretching completed", habit.stretchingCompleted) { habit = habit.copy(stretchingCompleted = it) } }
-        item { Button({ vm.saveDailyHabit(habit) }, Modifier.fillMaxWidth()) { Text("Save today's checklist") } }
+        item { HabitToggle(stringResource(R.string.workout_completed), habit.workoutCompleted) { habit = habit.copy(workoutCompleted = it) } }
+        item { HabitToggle(stringResource(R.string.water_goal_completed), habit.waterGoalCompleted) { habit = habit.copy(waterGoalCompleted = it) } }
+        item { HabitToggle(stringResource(R.string.steps_placeholder), habit.stepsCompleted) { habit = habit.copy(stepsCompleted = it) } }
+        item { HabitToggle(stringResource(R.string.meal_plan_followed), habit.mealPlanFollowed) { habit = habit.copy(mealPlanFollowed = it) } }
+        item { HabitToggle(stringResource(R.string.sleep_logged), habit.sleepLogged) { habit = habit.copy(sleepLogged = it) } }
+        item { HabitToggle(stringResource(R.string.stretching_completed), habit.stretchingCompleted) { habit = habit.copy(stretchingCompleted = it) } }
+        item { Button({ vm.saveDailyHabit(habit) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_checklist)) } }
     }
 }
 
@@ -61,26 +66,26 @@ fun FitnessReportsScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState()
     val weekly = state.weeklyReport
     val monthly = state.monthlyReport
-    ExpansionPage("Weekly and monthly reports", back) {
+    ExpansionPage(stringResource(R.string.weekly_monthly_reports), back) {
         item {
-            ReportCard("Weekly fitness report") {
-                Text("Workouts: ${weekly.workoutsCompleted} | Missed: ${weekly.missedWorkouts}")
-                Text("Calories: ${weekly.caloriesBurned} kcal")
-                Text("Best workout week: ${weekly.bestWorkoutWeek}")
-                Text("Suggested improvement: ${weekly.improvementPlan}")
+            ReportCard(stringResource(R.string.weekly_fitness_report)) {
+                Text(stringResource(R.string.workouts_missed_value, weekly.workoutsCompleted, weekly.missedWorkouts))
+                Text(stringResource(R.string.calories_kcal_value, weekly.caloriesBurned))
+                Text(stringResource(R.string.best_week_value, weekly.bestWorkoutWeek))
+                Text(stringResource(R.string.suggested_improvement_value, weekly.improvementPlan))
             }
         }
         item {
-            ReportCard("Monthly transformation report") {
-                Text("Workouts: ${monthly.workoutsCompleted} | Calories: ${monthly.caloriesBurned} kcal")
+            ReportCard(stringResource(R.string.monthly_transformation_report)) {
+                Text(stringResource(R.string.workouts_calories_value, monthly.workoutsCompleted, monthly.caloriesBurned))
                 Text(monthly.transformationSummary)
-                Text("Suggested improvement: ${monthly.improvementPlan}")
+                Text(stringResource(R.string.suggested_improvement_value, monthly.improvementPlan))
             }
         }
-        item { Text("Workout history timeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        if (state.history.isEmpty()) item { Text("Complete a workout to begin your timeline.") }
+        item { Text(stringResource(R.string.workout_history_timeline), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+        if (state.history.isEmpty()) item { Text(stringResource(R.string.timeline_empty)) }
         items(state.history) { workout ->
-            Text("${date(workout.completedAt)} | ${workout.planTitle} | ${workout.caloriesBurned} kcal")
+            Text(stringResource(R.string.timeline_row, date(workout.completedAt), workout.planTitle, workout.caloriesBurned))
         }
     }
 }
@@ -89,8 +94,8 @@ fun FitnessReportsScreen(vm: FitnessViewModel, back: () -> Unit) {
 fun FavoriteWorkoutsScreen(vm: FitnessViewModel, back: () -> Unit, openPlan: (Int) -> Unit) {
     val state by vm.uiState.collectAsState()
     val plans = state.plans.filter { it.id in state.favoritePlanIds }
-    ExpansionPage("Favorite workouts", back) {
-        if (plans.isEmpty()) item { Text("Save a workout from its detail screen to find it here.") }
+    ExpansionPage(stringResource(R.string.favorite_workouts), back) {
+        if (plans.isEmpty()) item { Text(stringResource(R.string.favorites_empty)) }
         items(plans) { plan -> WorkoutPlanCard(plan, { openPlan(plan.id) }) }
     }
 }
@@ -101,18 +106,19 @@ fun AppFeedbackScreen(vm: FitnessViewModel, back: () -> Unit) {
     var message by remember { mutableStateOf("") }
     var saved by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    ExpansionPage("App feedback", back) {
-        item { Text("Share ideas or report a problem. This offline placeholder stores your message locally.") }
-        item { OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text("Email") }) }
-        item { OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text("Feedback") }) }
+    val feedbackError = stringResource(R.string.feedback_error)
+    ExpansionPage(stringResource(R.string.app_feedback), back) {
+        item { Text(stringResource(R.string.feedback_body)) }
+        item { OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.email)) }) }
+        item { OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.feedback)) }) }
         item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
         item {
             Button({
-                if (!email.contains("@") || message.isBlank()) error = "Enter a valid email and a feedback message."
+                if (!email.contains("@") || message.isBlank()) error = feedbackError
                 else { vm.sendSupportMessage(email, message); saved = true; error = null }
-            }, Modifier.fillMaxWidth()) { Text("Save feedback locally") }
+            }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_feedback)) }
         }
-        if (saved) item { Text("Feedback saved for the future support integration.") }
+        if (saved) item { Text(stringResource(R.string.feedback_saved)) }
     }
 }
 
@@ -135,8 +141,9 @@ private fun ReportCard(title: String, content: @Composable ColumnScope.() -> Uni
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpansionPage(title: String, back: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) =
-    Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
     }
 
-private fun date(timestamp: Long) = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+private fun date(timestamp: Long) = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))

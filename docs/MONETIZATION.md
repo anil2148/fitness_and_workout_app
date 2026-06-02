@@ -31,7 +31,8 @@ Referral discounts and promo codes remain labeled placeholders. They do not alte
 
 `SubscriptionPlanUi` supports:
 
-- Standard and discounted price text
+- Numeric standard and discounted preview amounts
+- ISO currency code
 - Billing-period copy
 - Optional original price with strike-through display
 - Discount text
@@ -63,7 +64,7 @@ Google Play Console should remain the source of truth for final prices. Do not h
 - Intro offer: use `monthly-intro-099` for a first-month conversion test.
 - Seasonal discounts: manage `yearly-50-off` and `new-year-offer` in Play Console and show only eligible offers returned by Play.
 - Promo codes and referrals: connect them to Play-supported promotions or a verified backend campaign before granting entitlement.
-- Regional pricing: use localized Play `ProductDetails` formatting. The app's regional preview values are mock display models only.
+- Regional pricing: use localized Play `ProductDetails` formatting. The app's numeric regional preview values are mock models only. `CurrencyFormatter` applies the selected ISO currency and app language for offline previews.
 
 ## Production Checklist
 

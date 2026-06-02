@@ -32,6 +32,12 @@ class FitnessCalculationsTest {
         assertEquals(2.54f, Units.inputLength(1f, "Imperial"), 0.001f)
     }
 
+    @Test fun defaultUnitsFollowCountryCodeOrLabel() {
+        assertEquals("Imperial", Units.defaultSystem("US"))
+        assertEquals("Imperial", Units.defaultSystem("United Kingdom"))
+        assertEquals("Metric", Units.defaultSystem("IN"))
+    }
+
     @Test fun streakCountsConsecutiveDaysIncludingYesterday() {
         val today = LocalDate.of(2026, 6, 2)
         val timestamps = listOf(today.minusDays(1), today.minusDays(2), today.minusDays(3)).map {

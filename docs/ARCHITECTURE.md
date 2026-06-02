@@ -797,3 +797,19 @@ When adding or fixing features:
 - Update documentation.
 - Run verification script.
 - Confirm APK generation.
+
+---
+
+## 23. Localization And Region Settings
+
+`AppLocaleManager` applies `en`, `hi`, `es`, `fr`, or `ar` before Compose loads and recreates the activity after a language change. `AppPreferences` persists `selected_language_code` in DataStore. Arabic uses Android RTL configuration and the manifest enables `supportsRtl`.
+
+`AppSettings` persists country, currency, and unit choices independently:
+
+- `selectedCountryCode`
+- `selectedCurrencyCode`
+- `selectedUnitSystem`
+
+`RegionSettings` owns safe country defaults and falls back to the United States with `USD`. `CurrencyFormatter` formats numeric amounts through `NumberFormat` and `Currency`, using the selected app language. Compose must not embed currency symbols or release pricing.
+
+`MockPremiumPlans` contains local numeric regional previews only. Production billing must replace them with localized Google Play `ProductDetails` prices and eligible offers.

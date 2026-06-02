@@ -17,10 +17,26 @@ class PremiumPricingRepositoryTest {
     @Test fun exposesFlexiblePromotionalOffers() {
         val offers = PremiumPricingRepository().getPromotionalPlans()
 
-        assertTrue(offers.any { it.offerId == "monthly-intro-099" && it.originalPriceText != null })
+        assertTrue(offers.any { it.offerId == "monthly-intro-099" && it.originalPriceAmount != null })
         assertTrue(offers.any { it.offerId == "yearly-50-off" && it.discountText == "50% off yearly plan" })
         assertTrue(offers.any { it.offerId == "yearly-free-trial-7-days" && it.trialText == "7 days free" })
         assertTrue(offers.any { it.offerId == "new-year-offer" && it.offerBadge == "New Year Offer" })
+    }
+
+    @Test fun usesRegionalNumericAmountsAndCurrencyCode() {
+        val indiaPlans = PremiumPricingRepository("INR").getSubscriptionPlans()
+        val monthly = indiaPlans.first { it.productId == "premium_monthly" }
+
+        assertEquals("INR", monthly.currencyCode)
+        assertEquals(99.0, monthly.priceAmount, 0.0)
+    }
+
+    @Test fun unsupportedCurrencyFallsBackToUsd() {
+        val monthly = PremiumPricingRepository("NOT-A-CURRENCY").getSubscriptionPlans()
+            .first { it.productId == "premium_monthly" }
+
+        assertEquals("USD", monthly.currencyCode)
+        assertEquals(2.99, monthly.priceAmount, 0.0)
     }
 
     @Test fun selectsBasePlanOrPromotionalOffer() {

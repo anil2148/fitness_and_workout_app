@@ -901,3 +901,19 @@ The immediate development priority should be:
 8. Keep advanced features as safe placeholders until ready.
 
 A small stable app is better than a large app with broken features.
+
+---
+
+## 24. Localization And Regional Formatting
+
+Supported UI locales:
+
+- English (`en`)
+- Hindi (`hi`)
+- Spanish (`es`)
+- French (`fr`)
+- Arabic (`ar`)
+
+The language selector persists its choice and refreshes the visible Compose UI. Country, currency, and unit selectors are separate settings. Country selection seeds a sensible currency and unit default, while users may override currency or units afterward.
+
+Premium preview prices are numeric mock values formatted at runtime for `USD`, `INR`, `GBP`, `CAD`, `AUD`, `EUR`, `BRL`, `AED`, and `SAR`. Real production prices must come from Google Play Billing.

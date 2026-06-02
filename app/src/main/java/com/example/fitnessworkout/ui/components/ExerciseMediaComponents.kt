@@ -35,13 +35,15 @@ import com.example.fitnessworkout.data.model.WorkoutPlan
 import com.example.fitnessworkout.ui.theme.FitnessBlack
 import com.example.fitnessworkout.ui.theme.FitnessGreen
 import com.example.fitnessworkout.utils.ExerciseMedia
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 
 @Composable
 fun ExerciseIllustration(exercise: Exercise, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Image(
         painter = androidx.compose.ui.res.painterResource(ExerciseMedia.drawableId(context, exercise)),
-        contentDescription = ExerciseMedia.illustrationDescription(exercise.name),
+        contentDescription = stringResource(R.string.exercise_illustration, exercise.name),
         contentScale = ContentScale.Fit,
         modifier = modifier
             .fillMaxWidth()
@@ -55,7 +57,7 @@ fun WorkoutPlanIllustration(plan: WorkoutPlan, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Image(
         painter = androidx.compose.ui.res.painterResource(ExerciseMedia.drawableId(context, ExerciseMedia.planImageResourceName(plan))),
-        contentDescription = "${plan.category} workout illustration",
+        contentDescription = stringResource(R.string.workout_illustration, plan.category),
         contentScale = ContentScale.Crop,
         modifier = modifier.clip(RoundedCornerShape(14.dp)),
     )
@@ -110,7 +112,7 @@ fun ExerciseVideoPlaceholder(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(exercise.name, color = Color.White, fontWeight = FontWeight.Bold)
                     Text(
-                        if (isLocked) "Premium video guide" else "Video guide coming soon",
+                        if (isLocked) stringResource(R.string.premium_video_guide) else stringResource(R.string.video_guide_coming_soon),
                         color = FitnessGreen,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -120,9 +122,9 @@ fun ExerciseVideoPlaceholder(
             LinearProgressIndicator(progress = { 0f }, modifier = Modifier.fillMaxWidth())
             Text(
                 when {
-                    isLocked -> "Unlock Premium to view the video guide placeholder."
-                    hasPackagedVideo -> "Local video asset detected. Playback support is coming soon."
-                    else -> "Video guide coming soon"
+                    isLocked -> stringResource(R.string.unlock_video_placeholder)
+                    hasPackagedVideo -> stringResource(R.string.local_video_detected)
+                    else -> stringResource(R.string.video_guide_coming_soon)
                 },
                 color = Color.LightGray,
                 style = MaterialTheme.typography.labelSmall,

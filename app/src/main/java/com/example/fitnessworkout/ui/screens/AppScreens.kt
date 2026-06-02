@@ -79,10 +79,11 @@ import com.example.fitnessworkout.data.MockPremiumPlans
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.utils.AppLocaleManager
+import com.example.fitnessworkout.utils.CurrencyFormatter
+import com.example.fitnessworkout.utils.RegionSettings
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
-import com.example.fitnessworkout.data.model.PremiumComparisonFeature
 import com.example.fitnessworkout.data.model.SubscriptionPlanUi
 import com.example.fitnessworkout.repository.PremiumPricingRepository
 import com.example.fitnessworkout.ui.components.AdBannerPlaceholder
@@ -93,6 +94,7 @@ import com.example.fitnessworkout.ui.components.SectionTitle
 import com.example.fitnessworkout.ui.components.StatCard
 import com.example.fitnessworkout.ui.components.WorkoutPlanIllustration
 import com.example.fitnessworkout.ui.components.WorkoutPlanCard
+import com.example.fitnessworkout.ui.components.localizedOption
 import com.example.fitnessworkout.ui.theme.FitnessBlack
 import com.example.fitnessworkout.ui.theme.FitnessGreen
 import com.example.fitnessworkout.viewmodel.FitnessUiState
@@ -118,6 +120,8 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var equipment by remember { mutableStateOf("No Equipment") }
     var style by remember { mutableStateOf("Balanced") }
     var country by remember { mutableStateOf("United States") }
+    var countryCode by remember { mutableStateOf("US") }
+    var currencyCode by remember { mutableStateOf("USD") }
     var languageCode by remember { mutableStateOf(AppLocaleManager.persistedLanguageCode(context)) }
     var unitSystem by remember { mutableStateOf("Imperial") }
     var diet by remember { mutableStateOf("Balanced") }
@@ -140,7 +144,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
             Text(stringResource(R.string.fitness_goal), fontWeight = FontWeight.Bold)
             Column {
                 goals.forEach { goal ->
-                    FilterChip(selected = selectedGoal == goal, onClick = { selectedGoal = goal }, label = { Text(goal) })
+                    FilterChip(selected = selectedGoal == goal, onClick = { selectedGoal = goal }, label = { Text(localizedOption(goal)) })
                 }
             }
         }
@@ -148,7 +152,13 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
         item { OnboardingChoices(stringResource(R.string.available_time), listOf(10, 20, 30, 45).map { "$it min" }, "$minutes min") { minutes = it.substringBefore(" ").toInt() } }
         item { OnboardingChoices(stringResource(R.string.equipment), listOf("No Equipment", "Dumbbells", "Resistance Band", "Gym"), equipment) { equipment = it } }
         item { OnboardingChoices(stringResource(R.string.workout_style), listOf("Balanced", "Strength", "Cardio", "Mobility", "HIIT"), style) { style = it } }
-        item { OnboardingChoices(stringResource(R.string.country_region), listOf("United States", "India", "Spain", "France", "Brazil"), country) { country = it; unitSystem = Units.defaultSystem(it) } }
+        item { OnboardingChoices(stringResource(R.string.country_region), RegionSettings.supportedCountries.map { it.label }, country) {
+            val selected = RegionSettings.country(it)
+            country = selected.label
+            countryCode = selected.code
+            currencyCode = selected.currencyCode
+            unitSystem = selected.unitSystem
+        } }
         item { OnboardingChoices(stringResource(R.string.preferred_language), AppLocaleManager.supportedLanguages.map { it.label }, AppLocaleManager.languageName(languageCode)) { languageCode = AppLocaleManager.languageCode(it) } }
         item { OnboardingChoices(stringResource(R.string.unit_system), listOf("Metric", "Imperial"), unitSystem) { unitSystem = it } }
         item { OnboardingChoices(stringResource(R.string.diet_preference), listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly"), diet) { diet = it } }
@@ -178,7 +188,18 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
                     } else {
                         error = null
                         viewModel.completeOnboarding(name.trim(), parsedAge, parsedWeight, parsedHeight, selectedGoal, level, minutes, equipment, style,
-                            AppSettings(country = country, language = AppLocaleManager.languageName(languageCode), selectedLanguageCode = languageCode, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location, injurySafeMode = injurySafeMode)
+                            AppSettings(
+                                country = country,
+                                language = AppLocaleManager.languageName(languageCode),
+                                selectedLanguageCode = languageCode,
+                                selectedCountryCode = countryCode,
+                                selectedCurrencyCode = currencyCode,
+                                selectedUnitSystem = unitSystem,
+                                unitSystem = unitSystem,
+                                dietPreference = diet,
+                                workoutLocation = location,
+                                injurySafeMode = injurySafeMode,
+                            )
                         ) { AppLocaleManager.restartUi(context) }
                     }
                 },
@@ -194,7 +215,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     Column {
         Text(title, fontWeight = FontWeight.Bold)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            options.forEach { FilterChip(selected == it, { choose(it) }, label = { Text(it) }) }
+            options.forEach { FilterChip(selected == it, { choose(it) }, label = { Text(localizedOption(it)) }) }
         }
     }
 }
@@ -232,7 +253,7 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
         item { DashboardStats(state) }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard("BMI", "${"%.1f".format(state.user?.bmi ?: 0f)}", Modifier.weight(1f))
+                StatCard(stringResource(R.string.bmi), "${"%.1f".format(state.user?.bmi ?: 0f)}", Modifier.weight(1f))
                 StatCard(stringResource(R.string.water), "${state.water.amountMl} / ${state.water.goalMl} ml", Modifier.weight(1f))
             }
         }
@@ -348,7 +369,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Beginner", "Intermediate", "Advanced").forEach {
-                            FilterChip(selected = selectedLevel == it, onClick = { selectedLevel = it }, label = { Text(it) })
+                            FilterChip(selected = selectedLevel == it, onClick = { selectedLevel = it }, label = { Text(localizedOption(it)) })
                         }
                     }
                 }
@@ -402,8 +423,8 @@ fun WorkoutDetailScreen(
     }
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text(plan?.title ?: "Workout") }, navigationIcon = {
-            IconButton(onClick = { showStopWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+        TopAppBar(title = { Text(plan?.title ?: stringResource(R.string.workout)) }, navigationIcon = {
+            IconButton(onClick = { showStopWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
         })
     }) { padding ->
         LazyColumn(
@@ -416,7 +437,7 @@ fun WorkoutDetailScreen(
                 item {
                     Text(it.description)
                     Spacer(Modifier.height(6.dp))
-                    Text("${it.durationMinutes} min | ${it.estimatedCalories} kcal", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.workout_summary, it.durationMinutes, it.estimatedCalories), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
                 item {
                     Button(onStartPlayer, Modifier.fillMaxWidth()) {
@@ -496,17 +517,17 @@ private fun ExerciseCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("$index.", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(exercise.name, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                IconButton(onClick = onComplete) { Icon(Icons.Default.CheckCircle, "Mark complete", tint = if (isComplete) MaterialTheme.colorScheme.primary else Color.Gray) }
+                IconButton(onClick = onComplete) { Icon(Icons.Default.CheckCircle, stringResource(R.string.mark_complete), tint = if (isComplete) MaterialTheme.colorScheme.primary else Color.Gray) }
             }
             ExerciseIllustration(exercise, Modifier.height(144.dp))
             ExerciseVideoPlayer(exercise, isPremiumUser, onPremium)
-            Text("${exercise.muscleGroup} | ${exercise.difficulty} | ${exercise.equipment}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-            Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest | ${exercise.caloriesPerMinute} kcal/min", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.exercise_traits, exercise.muscleGroup, exercise.difficulty, exercise.equipment), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.exercise_stats, exercise.sets, exercise.repsOrDuration, exercise.restSeconds, exercise.caloriesPerMinute), style = MaterialTheme.typography.bodySmall)
             Text(exercise.instruction, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Safety: ${exercise.safetyTips}", style = MaterialTheme.typography.bodySmall)
-            Text("Avoid: ${exercise.commonMistakes}", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.safety_value, exercise.safetyTips), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.avoid_value, exercise.commonMistakes), style = MaterialTheme.typography.bodySmall)
             if (exercise.durationSeconds != null) {
-                OutlinedButton(onClick = onTimer) { Text(timerText ?: "Start timer") }
+                OutlinedButton(onClick = onTimer) { Text(timerText ?: stringResource(R.string.start_timer)) }
             }
             TextButton(onClick = onDetails) { Text(stringResource(R.string.open_exercise_guide)) }
         }
@@ -543,7 +564,7 @@ fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremiu
         }
         item {
             if (state.isPremiumUser) {
-                Text("Advanced analytics: consistency ${(state.weeklyCount / 7f * 100).toInt()}% • average ${state.history.map { it.durationMinutes }.average().takeIf { !it.isNaN() }?.toInt() ?: 0} min", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.advanced_analytics_value, (state.weeklyCount / 7f * 100).toInt(), state.history.map { it.durationMinutes }.average().takeIf { !it.isNaN() }?.toInt() ?: 0), fontWeight = FontWeight.Bold)
             } else OutlinedButton(onPremium, Modifier.fillMaxWidth()) { Icon(Icons.Default.Lock, null); Text(" ${stringResource(R.string.unlock_advanced_analytics)}") }
         }
         if (state.history.isEmpty()) item { Text(stringResource(R.string.no_history)) }
@@ -580,7 +601,8 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
     ) {
         item { SectionTitle(stringResource(R.string.profile_title), stringResource(R.string.profile_subtitle)) }
         item { ProfileSummary(user, state.settings.unitSystem) }
-        item { Text("${stringResource(R.string.language)}: ${AppLocaleManager.languageName(state.settings.selectedLanguageCode)}") }
+        item { Text(stringResource(R.string.label_value, stringResource(R.string.language), AppLocaleManager.languageName(state.settings.selectedLanguageCode))) }
+        item { Text(stringResource(R.string.label_value, stringResource(R.string.currency), state.settings.selectedCurrencyCode)) }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.dark_mode), Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -600,20 +622,20 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
             }
         }
         item {
-            listOf("water" to "Water tracker", "calculators" to "Health calculators", "diet" to "Diet guidance",
-                "custom" to "AI-style custom plan", "reminders" to "Smart reminders", "measurements" to "Body measurements",
-                "photos" to "Progress photos", "achievements" to "Achievements", "fitness-test" to "Fitness level test",
-                "share" to "Workout share card", "privacy" to "Privacy policy", "terms" to "Terms",
-                "medical" to "Medical disclaimer", "feedback" to "Feedback", "delete-data" to "Delete all data",
-                "settings" to "Global settings", "regional-pricing" to "Regional pricing preview", "quick-workout" to "Quick workouts",
-                "fitness-score" to "Fitness score", "ai-workout" to "AI-ready workout coach", "ai-meal" to "AI-ready meal suggestions",
-                "ai-progress" to "AI-ready progress analysis", "ai-chat" to "AI-ready motivation chat", "progress-report" to "PDF report preview",
-                "safety" to "Safety and trust", "about" to "About app", "contact-support" to "Contact support",
-                "rate-app" to "Rate app", "share-app" to "Share app", "data-safety" to "Data safety",
-                "announcements" to "Announcements", "content-categories" to "Workout and diet categories",
-                "daily-habits" to "Daily habit checklist", "fitness-reports" to "Weekly and monthly reports",
-                "favorites" to "Favorite workouts").forEach { (route, label) ->
-                OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
+            listOf("water" to R.string.water_tracker, "calculators" to R.string.health_calculators, "diet" to R.string.diet_guidance,
+                "custom" to R.string.custom_plan_builder, "reminders" to R.string.daily_reminders, "measurements" to R.string.body_measurements,
+                "photos" to R.string.progress_photos, "achievements" to R.string.achievements, "fitness-test" to R.string.fitness_level_test,
+                "share" to R.string.workout_share_card, "privacy" to R.string.privacy_policy, "terms" to R.string.terms,
+                "medical" to R.string.medical_disclaimer_title, "feedback" to R.string.feedback, "delete-data" to R.string.delete_all_data,
+                "settings" to R.string.settings_title, "regional-pricing" to R.string.regional_pricing_preview, "quick-workout" to R.string.quick_workout,
+                "fitness-score" to R.string.fitness_score, "ai-workout" to R.string.ai_workout_coach, "ai-meal" to R.string.ai_meal_suggestions,
+                "ai-progress" to R.string.ai_progress_analysis, "ai-chat" to R.string.ai_motivation_chat, "progress-report" to R.string.progress_report_preview,
+                "safety" to R.string.safety_and_trust, "about" to R.string.about_app, "contact-support" to R.string.contact_support,
+                "rate-app" to R.string.rate_app, "share-app" to R.string.share_app, "data-safety" to R.string.data_safety,
+                "announcements" to R.string.announcements, "content-categories" to R.string.workout_diet_categories,
+                "daily-habits" to R.string.daily_habits, "fitness-reports" to R.string.weekly_monthly_reports,
+                "favorites" to R.string.favorite_workouts).forEach { (route, label) ->
+                OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(stringResource(label)) }
             }
         }
         item {
@@ -630,10 +652,10 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
     }
     if (showReset) AlertDialog(
         onDismissRequest = { showReset = false },
-        title = { Text("Reset progress?") },
-        text = { Text("This removes your completed workout history, calories, and streak.") },
-        confirmButton = { TextButton(onClick = { viewModel.resetProgress(); showReset = false }) { Text("Reset") } },
-        dismissButton = { TextButton(onClick = { showReset = false }) { Text("Cancel") } }
+        title = { Text(stringResource(R.string.reset_progress_question)) },
+        text = { Text(stringResource(R.string.reset_progress_body)) },
+        confirmButton = { TextButton(onClick = { viewModel.resetProgress(); showReset = false }) { Text(stringResource(R.string.reset)) } },
+        dismissButton = { TextButton(onClick = { showReset = false }) { Text(stringResource(R.string.cancel)) } }
     )
 }
 
@@ -642,22 +664,24 @@ private fun ProfileSummary(user: UserProfile, unitSystem: String) {
     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = FitnessBlack)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(user.name, color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("${user.age} years | ${Units.weight(user.weightKg, unitSystem)} | ${Units.length(user.heightCm, unitSystem)}", color = Color.LightGray)
-            Text("Goal: ${user.fitnessGoal}", color = FitnessGreen, fontWeight = FontWeight.Bold)
-            Text("BMI: ${"%.1f".format(user.bmi)} (${bmiLabel(user.bmi)})", color = Color.White)
+            Text(stringResource(R.string.profile_age_value, user.age, Units.weight(user.weightKg, unitSystem), Units.length(user.heightCm, unitSystem)), color = Color.LightGray)
+            Text(stringResource(R.string.goal_value, user.fitnessGoal), color = FitnessGreen, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.bmi_value, "%.1f".format(user.bmi), bmiLabel(user.bmi)), color = Color.White)
         }
     }
 }
 
-private fun bmiLabel(bmi: Float) = when {
-    bmi < 18.5f -> "Below healthy range"
-    bmi < 25f -> "Healthy range"
-    bmi < 30f -> "Above healthy range"
-    else -> "High range"
-}
+@Composable
+private fun bmiLabel(bmi: Float) = stringResource(when {
+    bmi < 18.5f -> R.string.bmi_below
+    bmi < 25f -> R.string.bmi_healthy
+    bmi < 30f -> R.string.bmi_above
+    else -> R.string.bmi_high
+})
 
 @Composable
 private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: (String, Int, Float, Float, String) -> Unit) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf(user.name) }
     var age by remember { mutableStateOf(user.age.toString()) }
     var weight by remember { mutableStateOf(user.weightKg.toString()) }
@@ -666,13 +690,13 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit profile") },
+        title = { Text(stringResource(R.string.edit_profile)) },
         text = {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { ProfileFields(name, age, weight, height, { name = it }, { age = it }, { weight = it }, { height = it }) }
                 item {
                     goals.forEach { option ->
-                        FilterChip(selected = goal == option, onClick = { goal = option }, label = { Text(option) })
+                        FilterChip(selected = goal == option, onClick = { goal = option }, label = { Text(localizedOption(option)) })
                     }
                 }
                 item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -685,15 +709,15 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
                     val parsedWeight = weight.toFloatOrNull()
                     val parsedHeight = height.toFloatOrNull()
                     if (name.isBlank() || parsedAge == null || parsedAge <= 0 || parsedWeight == null || parsedWeight <= 0f || parsedHeight == null || parsedHeight <= 0f) {
-                        error = "Enter a name and positive numbers for age, weight, and height."
+                        error = context.getString(R.string.profile_validation_error)
                     } else {
                         error = null
                         onSave(name.trim(), parsedAge, parsedWeight, parsedHeight, goal)
                     }
                 },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }
 
@@ -701,9 +725,9 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
 @Composable
 fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
-    val pricingRepository = remember { PremiumPricingRepository() }
-    var subscriptionPlans by remember { mutableStateOf(pricingRepository.getSubscriptionPlans()) }
-    var promotionalPlans by remember { mutableStateOf(pricingRepository.getPromotionalPlans()) }
+    val pricingRepository = remember(state.settings.selectedCurrencyCode) { PremiumPricingRepository(state.settings.selectedCurrencyCode) }
+    var subscriptionPlans by remember(pricingRepository) { mutableStateOf(pricingRepository.getSubscriptionPlans()) }
+    var promotionalPlans by remember(pricingRepository) { mutableStateOf(pricingRepository.getPromotionalPlans()) }
     val selectedPlan = (subscriptionPlans + promotionalPlans).firstOrNull { it.isSelected }
     val selectPlan: (SubscriptionPlanUi) -> Unit = { plan ->
         pricingRepository.selectPlan(plan.productId, plan.offerId)
@@ -712,36 +736,38 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
     }
     Scaffold(topBar = {
         TopAppBar(title = { Text(stringResource(R.string.premium_title)) }, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
         })
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp)) }
             item { Text(stringResource(R.string.unlock_next_level), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold) }
             promotionalPlans.firstOrNull { it.trialText != null }?.trialText?.let { trial ->
-                item { Text("$trial • Cancel anytime", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                item { Text(stringResource(R.string.trial_cancel_value, premiumText(trial)), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             }
-            item { Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.") }
-            item { Text("Premium plans", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            item { Text(stringResource(if (state.isPremiumUser) R.string.premium_active else R.string.choose_plan)) }
+            item { Text(stringResource(R.string.premium_plans), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             items(subscriptionPlans, key = { "${it.productId}:${it.offerId.orEmpty()}" }) { plan ->
-                SubscriptionPlanCard(plan, onClick = { selectPlan(plan) })
+                SubscriptionPlanCard(plan, state.settings.selectedLanguageCode, onClick = { selectPlan(plan) })
             }
-            item { Text("Promotional offers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            item { Text(stringResource(R.string.promotional_offers), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             items(promotionalPlans, key = { "${it.productId}:${it.offerId.orEmpty()}" }) { plan ->
-                SubscriptionPlanCard(plan, onClick = { selectPlan(plan) })
+                SubscriptionPlanCard(plan, state.settings.selectedLanguageCode, onClick = { selectPlan(plan) })
             }
-            item { Text("${MockPremiumPlans.referralDiscountText} • ${MockPremiumPlans.promoCodeText}", style = MaterialTheme.typography.bodySmall) }
+            item { Text(stringResource(R.string.referral_and_promo), style = MaterialTheme.typography.bodySmall) }
             item { Text(stringResource(R.string.free_vs_premium), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-            items(premiumComparison) { feature -> Text("${feature.title}: ${feature.freeValue} | ${feature.premiumValue}") }
-            item { Text("Testimonial placeholder: “The short workout options help me stay consistent.”") }
-            item { Text("FAQ: Premium unlocks AI-ready previews, reports, advanced analytics, and unlimited tracking. Billing remains a placeholder until Play Billing is connected.") }
+            items(premiumComparison) { feature -> Text(stringResource(feature)) }
+            item { Text(stringResource(R.string.premium_testimonial)) }
+            item { Text(stringResource(R.string.premium_faq)) }
             item {
                 // TODO: Replace the local toggle with Google Play Billing purchase verification.
-                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Enable ${selectedPlan?.title ?: "Premium"} (mock)") }
+                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.enable_mock_plan, selectedPlan?.let { premiumTitle(it) } ?: stringResource(R.string.premium_title)))
+                }
             }
             item { OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) stringResource(R.string.disable_mock_premium) else stringResource(R.string.unlock_premium)) } }
             item { OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text(stringResource(R.string.restore_purchase)) } }
-            item { Text("Mock testing only. No payment is collected and no real purchase is created.", style = MaterialTheme.typography.bodySmall) }
+            item { Text(stringResource(R.string.mock_purchase_notice), style = MaterialTheme.typography.bodySmall) }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton({ onNavigate("terms") }) { Text(stringResource(R.string.terms)) }
@@ -753,7 +779,7 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
 }
 
 @Composable
-private fun SubscriptionPlanCard(plan: SubscriptionPlanUi, onClick: () -> Unit) {
+private fun SubscriptionPlanCard(plan: SubscriptionPlanUi, languageCode: String, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -763,27 +789,74 @@ private fun SubscriptionPlanCard(plan: SubscriptionPlanUi, onClick: () -> Unit) 
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(plan.title, fontWeight = FontWeight.Bold)
-                plan.offerBadge?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                Text(premiumTitle(plan), fontWeight = FontWeight.Bold)
+                plan.offerBadge?.let { Text(premiumText(it), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             }
-            Text(plan.description, style = MaterialTheme.typography.bodySmall)
+            Text(premiumDescription(plan), style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                plan.originalPriceText?.let { Text(it, textDecoration = TextDecoration.LineThrough, style = MaterialTheme.typography.bodySmall) }
-                Text(plan.priceText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                Text(plan.billingPeriodText)
+                plan.originalPriceAmount?.let { Text(CurrencyFormatter.format(it, plan.currencyCode, languageCode), textDecoration = TextDecoration.LineThrough, style = MaterialTheme.typography.bodySmall) }
+                Text(CurrencyFormatter.format(plan.priceAmount, plan.currencyCode, languageCode), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                Text(premiumText(plan.billingPeriodText))
             }
-            plan.discountText?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
-            plan.trialText?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            if (plan.isLifetime) Text("Lifetime purchase", style = MaterialTheme.typography.bodySmall)
-            if (plan.isSelected) Text("Selected", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            plan.discountText?.let { Text(premiumText(it), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            plan.trialText?.let { Text(premiumText(it), color = MaterialTheme.colorScheme.primary) }
+            if (plan.isLifetime) Text(stringResource(R.string.lifetime_purchase), style = MaterialTheme.typography.bodySmall)
+            if (plan.isSelected) Text(stringResource(R.string.selected), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
     }
 }
 
+@Composable
+private fun premiumTitle(plan: SubscriptionPlanUi): String = stringResource(when (plan.offerId) {
+    "monthly-intro-099" -> R.string.monthly_intro_offer
+    "yearly-50-off" -> R.string.yearly_limited_offer
+    "yearly-free-trial-7-days" -> R.string.yearly_free_trial
+    "new-year-offer" -> R.string.yearly_festival_offer
+    else -> when (plan.productId) {
+        "premium_monthly" -> R.string.monthly_premium
+        "premium_yearly" -> R.string.yearly_premium
+        else -> R.string.lifetime_premium
+    }
+})
+
+@Composable
+private fun premiumDescription(plan: SubscriptionPlanUi): String = stringResource(when (plan.offerId) {
+    "monthly-intro-099" -> R.string.monthly_intro_description
+    "yearly-50-off" -> R.string.yearly_limited_description
+    "yearly-free-trial-7-days" -> R.string.yearly_trial_description
+    "new-year-offer" -> R.string.yearly_festival_description
+    else -> when (plan.productId) {
+        "premium_monthly" -> R.string.monthly_premium_description
+        "premium_yearly" -> R.string.yearly_premium_description
+        else -> R.string.lifetime_premium_description
+    }
+})
+
+@Composable
+private fun premiumText(value: String): String = stringResource(when (value) {
+    "/ month" -> R.string.period_month
+    "/ year" -> R.string.period_year
+    " one-time" -> R.string.period_one_time
+    " first month" -> R.string.period_first_month
+    "/ year after trial" -> R.string.period_year_after_trial
+    "Save 44% vs monthly" -> R.string.save_44
+    "Best Value" -> R.string.best_value
+    "Lifetime" -> R.string.lifetime
+    "First month offer" -> R.string.first_month_offer
+    "Intro Offer" -> R.string.intro_offer
+    "50% off yearly plan" -> R.string.yearly_50_off
+    "Limited-Time Discount" -> R.string.limited_time_discount
+    "7 days free" -> R.string.seven_days_free
+    "Free Trial" -> R.string.free_trial
+    "Festival savings" -> R.string.festival_savings
+    "New Year Offer" -> R.string.new_year_offer
+    else -> R.string.premium_title
+})
+
 private val premiumComparison = listOf(
-    PremiumComparisonFeature("Progress tracking", "Limited", "Unlimited history"),
-    PremiumComparisonFeature("Workout plans", "Beginner plans", "Full custom plan builder"),
-    PremiumComparisonFeature("Analytics", "Basic score", "Reports and AI-ready analysis"),
-    PremiumComparisonFeature("Progress photos", "2 local photos", "Unlimited local photos"),
-    PremiumComparisonFeature("Ads", "Placeholder visible", "No ads")
+    R.string.compare_progress,
+    R.string.compare_plans,
+    R.string.compare_analytics,
+    R.string.compare_photos,
+    R.string.compare_ads,
 )

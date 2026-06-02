@@ -31,6 +31,7 @@ import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import com.example.fitnessworkout.utils.AppLocaleManager
+import com.example.fitnessworkout.utils.RegionSettings
 
 class FitnessRepository(private val dao: FitnessDao, private val appPreferences: AppPreferences) {
     val user = dao.observeUser()
@@ -151,8 +152,17 @@ class FitnessRepository(private val dao: FitnessDao, private val appPreferences:
         dao.deleteFavoriteWorkouts(); dao.deleteRecentlyViewedWorkouts()
     }
     suspend fun saveSettings(item: AppSettings) {
-        dao.upsertSettings(item)
-        appPreferences.setLanguageCode(item.selectedLanguageCode)
+        val country = RegionSettings.country(item.selectedCountryCode.ifBlank { item.country })
+        val unitSystem = item.selectedUnitSystem.ifBlank { RegionSettings.unitSystemForCountry(country.code) }
+        val normalized = item.copy(
+            country = country.label,
+            selectedCountryCode = country.code,
+            selectedCurrencyCode = RegionSettings.safeCurrencyCode(item.selectedCurrencyCode),
+            selectedUnitSystem = unitSystem,
+            unitSystem = unitSystem,
+        )
+        dao.upsertSettings(normalized)
+        appPreferences.setLanguageCode(normalized.selectedLanguageCode)
     }
     suspend fun saveRecovery(item: RecoveryLog) = dao.insertRecovery(item)
     suspend fun acknowledgeSafety() = dao.upsertSafetyAcknowledgement(SafetyAcknowledgement(medicalDisclaimerAccepted = true, acceptedAt = System.currentTimeMillis()))

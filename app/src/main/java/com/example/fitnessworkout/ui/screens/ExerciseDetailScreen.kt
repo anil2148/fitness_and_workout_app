@@ -60,8 +60,8 @@ fun ExerciseDetailScreen(
                 item { ExerciseVideoPlayer(exercise, state.isPremiumUser, onPremium) }
                 item {
                     Text(stringResource(R.string.exercise_details), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${exercise.muscleGroup} | ${exercise.difficulty} | ${exercise.equipment}")
-                    Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest | ${exercise.caloriesPerMinute} kcal/min")
+                    Text(stringResource(R.string.exercise_traits, exercise.muscleGroup, exercise.difficulty, exercise.equipment))
+                    Text(stringResource(R.string.exercise_stats, exercise.sets, exercise.repsOrDuration, exercise.restSeconds, exercise.caloriesPerMinute))
                 }
                 item {
                     Text(stringResource(R.string.step_by_step), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

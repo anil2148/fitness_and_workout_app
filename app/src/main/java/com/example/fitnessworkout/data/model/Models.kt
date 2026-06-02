@@ -178,7 +178,10 @@ data class AppSettings(
     val country: String = "United States",
     val language: String = "English",
     val selectedLanguageCode: String = "en",
-    val unitSystem: String = "Metric",
+    val selectedCountryCode: String = "US",
+    val selectedCurrencyCode: String = "USD",
+    val selectedUnitSystem: String = "Imperial",
+    val unitSystem: String = "Imperial",
     val dietPreference: String = "Balanced",
     val workoutLocation: String = "Home",
     val injurySafeMode: Boolean = false,
@@ -307,7 +310,7 @@ data class WorkoutContentCategory(
     val relatedPlans: List<String>
 )
 
-data class PricingDisplay(val currency: String, val monthly: String, val yearly: String, val lifetime: String)
+data class PricingDisplay(val currency: String, val monthly: Double, val yearly: Double, val lifetime: Double)
 
 data class WorkoutPlanWithExercises(
     val plan: WorkoutPlan,

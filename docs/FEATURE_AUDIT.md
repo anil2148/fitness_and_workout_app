@@ -16,7 +16,7 @@ This audit records the stabilized offline-first MVP. Automated checks and source
 | Guided workout player | Fixed | Safe exercise indexing, current and next illustration, video placeholder, timer, rest, pause, resume, next, skip, finish, and stop warning | Made player content scrollable on small screens | Missing exercise data displays a safe loading message. |
 | Completed workout persistence | Working | Repository save paths for detail, guided player, and quick workouts | No additional change required | Saves history, share summary, habit progress, and achievements locally. |
 | Exercise media fallback | Working | Drawable resource lookup, missing-name fallback, vector resources, accessibility descriptions, and nullable local-video lookup | No additional change required | Real MP4 files are optional and absent by design. |
-| Premium mock unlock and pricing | Fixed | Room-backed Premium status, selectable repository-backed pricing cards, promotional cards, lock routing, ad placeholder hiding, and disabled restore placeholder | Moved preview prices out of Compose into `MockPremiumPlans.kt` and added a Billing-ready repository boundary | Real Google Play Billing remains Coming Soon. |
+| Premium mock unlock and pricing | Fixed | Room-backed Premium status, selectable repository-backed pricing cards, numeric regional mock amounts, localized currency formatting, promotional cards, lock routing, ad placeholder hiding, and disabled restore placeholder | Moved preview prices out of Compose into `MockPremiumPlans.kt`, added `CurrencyFormatter`, and retained a Billing-ready repository boundary | Real Google Play Billing remains Coming Soon. |
 | Challenges | Fixed | List route, lock behavior, detail routing through warm-up, and empty-data behavior | Added explicit loading empty state | Advanced challenge logic remains local. |
 | Water tracker | Fixed | Positive custom amount validation, zero-goal progress safety, reset action, and habit synchronization | Reset now clears the daily water-goal habit flag | Input remains milliliters. |
 | Health calculators | Working | BMI, BMR, calorie needs, ideal-weight range, water estimate, and invalid-value handling | Existing pure calculations retained | Calculator entry remains metric; converted display support is limited. |
@@ -59,6 +59,18 @@ Incomplete integrations route to stable placeholder pages or disabled actions. T
 | Change back to English | Working | Settings persists `en`; JVM name/code mapping test passes. |
 | Arabic RTL | Working | `ar` mapping test passes, layout direction updates, and manifest sets `android:supportsRtl="true"`. |
 | Missing translations | Fixed | English, Hindi, Spanish, French, and Arabic folders contain matching keys. Secondary untranslated phrases safely fall back to English copy. |
+
+## Country, Currency, And Unit Audit
+
+| Scenario | Result | Evidence |
+|---|---|---|
+| United States default | Working | `US` maps to `USD` and Imperial units. |
+| India default | Working | `IN` maps to `INR` and Metric units. |
+| European default | Working | Germany, France, and Spain map to `EUR` and Metric units. |
+| Additional regions | Working | Canada, Australia, Brazil, UAE, and Saudi Arabia have explicit currency and unit defaults. |
+| Independent overrides | Working | Settings persists selected country, currency, and units as separate fields. |
+| Currency fallback | Working | Unsupported codes fall back to `USD`; JVM test passes. |
+| Regional Premium pricing | Working | `PremiumPricingRepository` reads numeric mock regional amounts and the UI formats them with `CurrencyFormatter`. |
 
 ## Automated Verification
 

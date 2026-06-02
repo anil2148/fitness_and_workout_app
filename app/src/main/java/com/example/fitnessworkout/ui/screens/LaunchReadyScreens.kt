@@ -41,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 import com.example.fitnessworkout.data.model.QuickWorkout
 import com.example.fitnessworkout.data.model.WorkoutContentCategory
 import com.example.fitnessworkout.ui.components.ExerciseIllustration
@@ -62,9 +64,9 @@ fun SplashScreen(isLoading: Boolean, finished: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Default.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary)
-        Text("Fitness and Workout", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-        Text("Build habits. Track progress. Feel stronger.")
-        if (isLoading) Text("Loading your local fitness plan...")
+        Text(stringResource(R.string.splash_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+        Text(stringResource(R.string.splash_subtitle))
+        if (isLoading) Text(stringResource(R.string.splash_loading))
     }
 }
 
@@ -74,16 +76,22 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Un
     var minutes by remember { mutableIntStateOf(5) }
     var filters by remember { mutableStateOf(setOf("No equipment")) }
     var workout by remember(state.allExercises) { mutableStateOf<QuickWorkout?>(null) }
-    LaunchPage("Quick workout", back) {
-        Text("Choose a short session. The local engine selects movements from your exercise library.")
+    LaunchPage(stringResource(R.string.quick_workout), back) {
+        Text(stringResource(R.string.quick_workout_body))
         ChipRow(listOf(5, 10, 15).map { "$it min" }, "$minutes min") { minutes = it.substringBefore(" ").toInt() }
-        listOf("No equipment", "Low impact", "No jumping", "Office friendly", "Beginner safe").forEach { label ->
-            FilterChip(selected = label in filters, onClick = { filters = if (label in filters) filters - label else filters + label }, label = { Text(label) })
+        listOf(
+            "No equipment" to stringResource(R.string.no_equipment),
+            "Low impact" to stringResource(R.string.low_impact),
+            "No jumping" to stringResource(R.string.no_jumping),
+            "Office friendly" to stringResource(R.string.office_friendly),
+            "Beginner safe" to stringResource(R.string.beginner_safe),
+        ).forEach { (filter, label) ->
+            FilterChip(selected = filter in filters, onClick = { filters = if (filter in filters) filters - filter else filters + filter }, label = { Text(label) })
         }
-        Button({ workout = vm.quickWorkout(minutes, filters) }, Modifier.fillMaxWidth()) { Text("Generate quick workout") }
+        Button({ workout = vm.quickWorkout(minutes, filters) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.generate_quick_workout)) }
         workout?.let { generated ->
-            Text("${generated.durationMinutes} minutes | ${generated.estimatedCalories} kcal", fontWeight = FontWeight.Bold)
-            if (generated.exercises.isEmpty()) Text("Exercise library is loading. Try generating the workout again in a moment.")
+            Text(stringResource(R.string.quick_workout_summary, generated.durationMinutes, generated.estimatedCalories), fontWeight = FontWeight.Bold)
+            if (generated.exercises.isEmpty()) Text(stringResource(R.string.exercise_library_loading))
             generated.exercises.forEach { exercise ->
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -93,7 +101,7 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Un
                 }
             }
             generated.exercises.firstOrNull()?.let { ExerciseVideoPlayer(it, state.isPremiumUser, premium) }
-            Button({ vm.completeQuickWorkout(generated); back() }, Modifier.fillMaxWidth(), enabled = generated.exercises.isNotEmpty()) { Text("Complete quick workout") }
+            Button({ vm.completeQuickWorkout(generated); back() }, Modifier.fillMaxWidth(), enabled = generated.exercises.isNotEmpty()) { Text(stringResource(R.string.complete_quick_workout)) }
         }
     }
 }
@@ -102,28 +110,28 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Un
 fun FitnessScoreScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState()
     val score = state.fitnessScore
-    LaunchPage("Fitness score", back) {
+    LaunchPage(stringResource(R.string.fitness_score), back) {
         CircularProgressIndicator(progress = { score.value / 100f })
         Text("${score.value} / 100", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
         Text(score.levelLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Text(score.weeklyComparison)
         Text(score.explanation)
-        Text("Ways to improve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.ways_to_improve), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         score.tips.forEach { Text("• $it") }
     }
 }
 
 @Composable fun AIWorkoutCoachScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) =
-    AIPreview(vm, "AI workout coach", "Based on your recent activity, try a short full-body session and finish with mobility work.", back, premium)
+    AIPreview(vm, stringResource(R.string.ai_workout_coach), stringResource(R.string.ai_workout_response), back, premium)
 
 @Composable fun AIMealSuggestionScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) =
-    AIPreview(vm, "AI meal suggestions", "Try a balanced plate with protein, vegetables, whole grains, and water. Adjust for your dietary preference.", back, premium)
+    AIPreview(vm, stringResource(R.string.ai_meal_suggestions), stringResource(R.string.ai_meal_response), back, premium)
 
 @Composable fun AIProgressAnalysisScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) =
-    AIPreview(vm, "AI progress analysis", "Your local history suggests that consistency is your strongest next lever. Schedule two short sessions this week.", back, premium)
+    AIPreview(vm, stringResource(R.string.ai_progress_analysis), stringResource(R.string.ai_progress_response), back, premium)
 
 @Composable fun AIMotivationChatScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) =
-    AIPreview(vm, "AI motivation chat", "Coach: Start with five minutes today. A small completed session keeps your routine alive.", back, premium)
+    AIPreview(vm, stringResource(R.string.ai_motivation_chat), stringResource(R.string.ai_chat_response), back, premium)
 
 @Composable
 private fun AIPreview(vm: FitnessViewModel, title: String, response: String, back: () -> Unit, premium: () -> Unit) {
@@ -131,11 +139,11 @@ private fun AIPreview(vm: FitnessViewModel, title: String, response: String, bac
     LaunchPage(title, back) {
         if (!state.isPremiumUser) {
             Icon(Icons.Default.Lock, null)
-            Text("This AI-ready preview is available with Premium.")
-            Button(premium) { Text("View Premium") }
+            Text(stringResource(R.string.ai_preview_premium))
+            Button(premium) { Text(stringResource(R.string.view_premium)) }
         } else {
             Text(response)
-            Text("Local rule-based preview", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.local_rule_preview), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             // TODO: Replace local coaching response with a production AI API after privacy review.
         }
     }
@@ -145,54 +153,54 @@ private fun AIPreview(vm: FitnessViewModel, title: String, response: String, bac
 fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
     val report = vm.progressReport()
-    LaunchPage("Progress report preview", back) {
+    LaunchPage(stringResource(R.string.progress_report_preview), back) {
         if (!state.isPremiumUser) {
             Icon(Icons.Default.Lock, null)
-            Text("PDF progress reports are a Premium feature.")
-            Button(premium) { Text("View Premium") }
+            Text(stringResource(R.string.pdf_premium_feature))
+            Button(premium) { Text(stringResource(R.string.view_premium)) }
         } else {
             Text(report.userName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(report.dateRange)
-            Text("Workouts completed: ${report.workoutsCompleted}")
-            Text("Calories burned: ${report.caloriesBurned}")
-            Text("Current streak: ${report.streak} days")
-            Text("Measurements: ${report.measurementSummary}")
-            Text("Water: ${report.waterSummary}")
-            Text("Fitness score: ${report.fitnessScore} / 100")
-            Text("Challenge progress: ${report.challengeProgress}")
-            Text("Progress photo: ${report.progressPhotoPlaceholder}")
-            OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text("Coming soon: Export PDF") }
+            Text(stringResource(R.string.workouts_completed_value, report.workoutsCompleted))
+            Text(stringResource(R.string.calories_burned_value, report.caloriesBurned))
+            Text(stringResource(R.string.current_streak_value, report.streak))
+            Text(stringResource(R.string.measurements_value, report.measurementSummary))
+            Text(stringResource(R.string.water_value, report.waterSummary))
+            Text(stringResource(R.string.fitness_score_value, report.fitnessScore))
+            Text(stringResource(R.string.challenge_progress_text, report.challengeProgress))
+            Text(stringResource(R.string.progress_photo_value, report.progressPhotoPlaceholder))
+            OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text(stringResource(R.string.coming_soon_export_pdf)) }
             // TODO: Export this preview with Android PdfDocument.
         }
     }
 }
 
-@Composable fun WarmUpScreen(start: () -> Unit, back: () -> Unit) = LaunchPage("Warm-up first", back) {
-    Text("Prepare your body before starting.", fontWeight = FontWeight.Bold)
-    listOf("March in place • 60 sec", "Arm circles • 30 sec", "Hip hinges • 45 sec", "Gentle mobility • 60 sec").forEach { Text("• $it") }
-    Text("Stop if you feel pain, dizziness, chest pain, or severe discomfort.", color = MaterialTheme.colorScheme.error)
-    Button(start, Modifier.fillMaxWidth()) { Text("Start workout") }
+@Composable fun WarmUpScreen(start: () -> Unit, back: () -> Unit) = LaunchPage(stringResource(R.string.warm_up_first), back) {
+    Text(stringResource(R.string.warm_up_body), fontWeight = FontWeight.Bold)
+    listOf(R.string.warm_up_march, R.string.warm_up_arms, R.string.warm_up_hips, R.string.warm_up_mobility).forEach { Text("• ${stringResource(it)}") }
+    Text(stringResource(R.string.stop_safety_warning), color = MaterialTheme.colorScheme.error)
+    Button(start, Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_workout)) }
 }
 
-@Composable fun CoolDownScreen(done: () -> Unit) = LaunchPage("Cool down", done) {
-    Text("Nice work. Give your body a gentle reset.", fontWeight = FontWeight.Bold)
-    listOf("Slow breathing • 60 sec", "Hamstring stretch • 30 sec", "Chest opener • 30 sec", "Drink water and rest").forEach { Text("• $it") }
-    Button(done, Modifier.fillMaxWidth()) { Text("Continue") }
+@Composable fun CoolDownScreen(done: () -> Unit) = LaunchPage(stringResource(R.string.cool_down), done) {
+    Text(stringResource(R.string.cool_down_body), fontWeight = FontWeight.Bold)
+    listOf(R.string.cool_down_breathing, R.string.cool_down_hamstring, R.string.cool_down_chest, R.string.cool_down_water).forEach { Text("• ${stringResource(it)}") }
+    Button(done, Modifier.fillMaxWidth()) { Text(stringResource(R.string.continue_label)) }
 }
 
-@Composable fun SafetyScreen(back: () -> Unit) = LaunchPage("Safety and trust", back) {
-    Text("Exercise safety tips", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    Text("Warm up first. Use controlled movement. Stop immediately for pain, dizziness, chest pain, shortness of breath, or severe discomfort.")
-    Text("Pregnancy and injury notice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    Text("Ask a qualified healthcare professional before starting or changing exercise during pregnancy, after an injury, or with a medical condition.")
+@Composable fun SafetyScreen(back: () -> Unit) = LaunchPage(stringResource(R.string.safety_and_trust), back) {
+    Text(stringResource(R.string.exercise_safety_tips), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Text(stringResource(R.string.exercise_safety_body))
+    Text(stringResource(R.string.pregnancy_injury_notice), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Text(stringResource(R.string.pregnancy_injury_body))
 }
 
-@Composable fun AboutAppScreen(back: () -> Unit) = LaunchPage("About the app", back) {
-    Text("Fitness and Workout App", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    Text("Version 1.0 (1)")
-    Text("Offline-first fitness tracking with optional future cloud integrations.")
-    Text("Privacy policy URL placeholder: https://example.com/privacy")
-    Text("Support email placeholder: support@example.com")
+@Composable fun AboutAppScreen(back: () -> Unit) = LaunchPage(stringResource(R.string.about_app), back) {
+    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Text(stringResource(R.string.version_info))
+    Text(stringResource(R.string.offline_first_body))
+    Text(stringResource(R.string.privacy_url_placeholder))
+    Text(stringResource(R.string.support_email_placeholder))
 }
 
 @Composable fun ContactSupportScreen(vm: FitnessViewModel, back: () -> Unit) {
@@ -200,43 +208,44 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
     var message by remember { mutableStateOf("") }
     var sent by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    LaunchPage("Contact support", back) {
-        OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text("Email") })
-        OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text("How can we help?") })
+    val context = LocalContext.current
+    LaunchPage(stringResource(R.string.contact_support), back) {
+        OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.email)) })
+        OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.how_can_we_help)) })
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button({ if (!email.contains("@") || message.isBlank()) error = "Enter a valid email and a support message." else { vm.sendSupportMessage(email, message); sent = true; error = null } }, Modifier.fillMaxWidth()) { Text("Save support request locally") }
-        if (sent) Text("Thanks. Your support request is saved for the future support integration.")
+        Button({ if (!email.contains("@") || message.isBlank()) error = context.getString(R.string.support_validation_error) else { vm.sendSupportMessage(email, message); sent = true; error = null } }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_support_request)) }
+        if (sent) Text(stringResource(R.string.support_saved))
     }
 }
 
-@Composable fun RateAppScreen(back: () -> Unit) = LaunchPage("Rate the app", back) {
-    Text("Enjoying your workouts? A future Play Store release will open the in-app review prompt here.")
-    OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text("Coming soon: Play Store rating") }
+@Composable fun RateAppScreen(back: () -> Unit) = LaunchPage(stringResource(R.string.rate_app), back) {
+    Text(stringResource(R.string.rate_app_body))
+    OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text(stringResource(R.string.coming_soon_rating)) }
 }
 
 @Composable fun ShareAppScreen(back: () -> Unit) {
     val context = LocalContext.current
-    LaunchPage("Share the app", back) {
-        Text("Invite a friend to build a stronger routine.")
+    LaunchPage(stringResource(R.string.share_app), back) {
+        Text(stringResource(R.string.share_app_body))
         Button({
             runCatching {
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "Try Fitness and Workout App: https://play.google.com/store/apps/details?id=com.example.fitnessworkout")
-                }, "Share app"))
+                    putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_app_message))
+                }, context.getString(R.string.share_app)))
             }
-        }, Modifier.fillMaxWidth()) { Icon(Icons.Default.Share, null); Text(" Share app") }
+        }, Modifier.fillMaxWidth()) { Icon(Icons.Default.Share, null); Text(" ${stringResource(R.string.share_app)}") }
     }
 }
 
-@Composable fun DataSafetyScreen(back: () -> Unit) = LaunchPage("Data safety", back) {
-    Text("Your workout history, measurements, photos, and preferences remain local on this device.")
-    Text("Cloud backup, analytics, authentication, and notifications are placeholders only. They require consent and production configuration before release.")
+@Composable fun DataSafetyScreen(back: () -> Unit) = LaunchPage(stringResource(R.string.data_safety), back) {
+    Text(stringResource(R.string.data_safety_local))
+    Text(stringResource(R.string.data_safety_future))
 }
 
 @Composable fun ContentHubScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState()
-    LaunchPage("Announcements", back) {
+    LaunchPage(stringResource(R.string.announcements), back) {
         state.announcements.forEach { item ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp)) {
@@ -246,21 +255,21 @@ fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium:
                 }
             }
         }
-        Text("TODO: Replace these local cards with Firebase Remote Config content.")
+        Text(stringResource(R.string.remote_config_todo))
     }
 }
 
 @Composable fun ContentCategoriesScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
-    LaunchPage("Workout and diet categories", back) {
+    LaunchPage(stringResource(R.string.workout_diet_categories), back) {
         contentCategories.forEach { category ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(category.title, fontWeight = FontWeight.Bold)
                     Text(category.description)
-                    Text(if (category.beginnerFriendly) "Beginner-friendly" else "Build up gradually", color = MaterialTheme.colorScheme.primary)
-                    Text("Related: ${category.relatedPlans.joinToString()}", style = MaterialTheme.typography.bodySmall)
-                    if (category.premiumOnly && !state.isPremiumUser) OutlinedButton(premium) { Text("Unlock with Premium") }
+                    Text(stringResource(if (category.beginnerFriendly) R.string.beginner_friendly else R.string.build_up_gradually), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.related_value, category.relatedPlans.joinToString()), style = MaterialTheme.typography.bodySmall)
+                    if (category.premiumOnly && !state.isPremiumUser) OutlinedButton(premium) { Text(stringResource(R.string.unlock_with_premium)) }
                 }
             }
         }
@@ -276,7 +285,7 @@ private fun ChipRow(options: List<String>, selected: String, choose: (String) ->
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun LaunchPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) =
-    Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) }
         }
