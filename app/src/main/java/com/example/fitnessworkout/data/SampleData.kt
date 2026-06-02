@@ -60,7 +60,9 @@ object SampleData {
                 localVideoName = "video_${imageName(name).removePrefix("exercise_")}",
                 caloriesPerMinute = 5 + intensity,
                 safetyTips = "Warm up first. Keep your form steady and stop if you feel pain.",
-                commonMistakes = "Avoid rushing, holding your breath, or losing alignment."
+                commonMistakes = "Avoid rushing, holding your breath, or losing alignment.",
+                isLowImpact = name in listOf("Incline Push-Ups", "Glute Bridges", "Wall Sit", "Arm Circles", "Plank"),
+                isNoJumping = name !in listOf("Jumping Jacks", "High Knees", "Burpees")
             )
         }
     }

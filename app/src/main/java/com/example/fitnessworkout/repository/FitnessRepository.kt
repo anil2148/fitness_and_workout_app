@@ -19,6 +19,11 @@ import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.data.model.CommunityPost
 import com.example.fitnessworkout.data.model.RecoveryLog
+import com.example.fitnessworkout.data.model.SafetyAcknowledgement
+import com.example.fitnessworkout.data.model.AppAnnouncement
+import com.example.fitnessworkout.data.model.SupportMessage
+import com.example.fitnessworkout.data.model.SkippedWorkout
+import com.example.fitnessworkout.data.model.QuickWorkout
 import java.time.LocalDate
 
 class FitnessRepository(private val dao: FitnessDao) {
@@ -38,6 +43,11 @@ class FitnessRepository(private val dao: FitnessDao) {
     val settings = dao.observeSettings()
     val communityPosts = dao.observeCommunityPosts()
     val recovery = dao.observeRecovery()
+    val allExercises = dao.observeAllExercises()
+    val safetyAcknowledgement = dao.observeSafetyAcknowledgement()
+    val announcements = dao.observeAnnouncements()
+    val supportMessages = dao.observeSupportMessages()
+    val skippedWorkouts = dao.observeSkippedWorkouts()
 
     fun exercises(planId: Int) = dao.observeExercises(planId)
 
@@ -48,6 +58,11 @@ class FitnessRepository(private val dao: FitnessDao) {
         if (dao.communityPostCount() == 0) dao.insertCommunityPosts(listOf(
             CommunityPost(author = "Maya", message = "Finished the beginner challenge today.", likes = 12),
             CommunityPost(author = "Alex", message = "Desk stretch break complete. Small habits add up.", likes = 8)
+        ))
+        if (dao.announcementCount() == 0) dao.insertAnnouncements(listOf(
+            AppAnnouncement(title = "New challenge", message = "Try the 30-day beginner consistency challenge.", type = "challenge"),
+            AppAnnouncement(title = "Featured workout", message = "Quick office-friendly movement breaks are now available.", type = "featured"),
+            AppAnnouncement(title = "Premium preview", message = "Explore local AI-ready coaching tools and progress reports.", type = "promo")
         ))
     }
 
@@ -64,6 +79,19 @@ class FitnessRepository(private val dao: FitnessDao) {
         dao.insertShareSummary(ShareableWorkoutSummary(workoutTitle = plan.title, caloriesBurned = plan.estimatedCalories, durationMinutes = plan.durationMinutes, streak = streak + 1))
         dao.insertAchievement(Achievement("first_workout", "First Step", "Completed your first workout"))
         if (streak + 1 >= 7) dao.insertAchievement(Achievement("seven_day_streak", "Week Warrior", "Maintained a 7-day workout streak"))
+    }
+
+    suspend fun completeQuickWorkout(workout: QuickWorkout, streak: Int) {
+        val title = "${workout.durationMinutes}-minute Quick Workout"
+        dao.insertCompletedWorkout(CompletedWorkout(
+            planId = 0,
+            planTitle = title,
+            completedAt = System.currentTimeMillis(),
+            caloriesBurned = workout.estimatedCalories,
+            durationMinutes = workout.durationMinutes
+        ))
+        dao.insertShareSummary(ShareableWorkoutSummary(workoutTitle = title, caloriesBurned = workout.estimatedCalories, durationMinutes = workout.durationMinutes, streak = streak + 1))
+        dao.insertAchievement(Achievement("quick_start", "Quick Win", "Completed a quick workout"))
     }
 
     suspend fun resetProgress() = dao.resetProgress()
@@ -88,8 +116,12 @@ class FitnessRepository(private val dao: FitnessDao) {
         dao.deleteAchievements(); dao.deleteFitnessTests(); dao.deleteShareSummaries()
         dao.deleteWaterLogs(); dao.deleteHealthMetrics(); dao.deleteReminderSettings(); dao.deleteCustomPlans()
         dao.deletePremiumStatus()
-        dao.deleteSettings(); dao.deleteRecovery()
+        dao.deleteSettings(); dao.deleteRecovery(); dao.deleteSafetyAcknowledgements()
+        dao.deleteSupportMessages(); dao.deleteSkippedWorkouts()
     }
     suspend fun saveSettings(item: AppSettings) = dao.upsertSettings(item)
     suspend fun saveRecovery(item: RecoveryLog) = dao.insertRecovery(item)
+    suspend fun acknowledgeSafety() = dao.upsertSafetyAcknowledgement(SafetyAcknowledgement(medicalDisclaimerAccepted = true, acceptedAt = System.currentTimeMillis()))
+    suspend fun sendSupportMessage(email: String, message: String) = dao.insertSupportMessage(SupportMessage(email = email, message = message))
+    suspend fun skipWorkout(plan: WorkoutPlan) = dao.insertSkippedWorkout(SkippedWorkout(planId = plan.id, planTitle = plan.title))
 }

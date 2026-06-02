@@ -21,13 +21,18 @@ import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.data.model.CommunityPost
 import com.example.fitnessworkout.data.model.RecoveryLog
+import com.example.fitnessworkout.data.model.SafetyAcknowledgement
+import com.example.fitnessworkout.data.model.AppAnnouncement
+import com.example.fitnessworkout.data.model.SupportMessage
+import com.example.fitnessworkout.data.model.SkippedWorkout
 
 @Database(
     entities = [UserProfile::class, WorkoutPlan::class, Exercise::class, CompletedWorkout::class,
         PremiumStatus::class, WaterLog::class, HealthMetric::class, ReminderSettings::class, CustomWorkoutPlan::class,
         BodyMeasurement::class, ProgressPhoto::class, Achievement::class, FitnessTestResult::class, ShareableWorkoutSummary::class,
-        AppSettings::class, CommunityPost::class, RecoveryLog::class],
-    version = 4,
+        AppSettings::class, CommunityPost::class, RecoveryLog::class, SafetyAcknowledgement::class,
+        AppAnnouncement::class, SupportMessage::class, SkippedWorkout::class],
+    version = 5,
     exportSchema = false
 )
 abstract class FitnessDatabase : RoomDatabase() {

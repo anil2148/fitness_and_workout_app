@@ -190,6 +190,70 @@ data class CommunityPost(@PrimaryKey(autoGenerate = true) val id: Int = 0, val a
 @Entity(tableName = "recovery_logs")
 data class RecoveryLog(@PrimaryKey(autoGenerate = true) val id: Int = 0, val sleepHours: Float, val soreness: Int, val energy: Int, val stress: Int, val recommendation: String)
 
+@Entity(tableName = "safety_acknowledgements")
+data class SafetyAcknowledgement(
+    @PrimaryKey val id: Int = 1,
+    val medicalDisclaimerAccepted: Boolean = false,
+    val acceptedAt: Long = 0L
+)
+
+@Entity(tableName = "app_announcements")
+data class AppAnnouncement(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val title: String,
+    val message: String,
+    val type: String,
+    val active: Boolean = true
+)
+
+@Entity(tableName = "support_messages")
+data class SupportMessage(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val email: String,
+    val message: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "skipped_workouts")
+data class SkippedWorkout(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val planId: Int,
+    val planTitle: String,
+    val skippedAt: Long = System.currentTimeMillis()
+)
+
+data class QuickWorkout(
+    val durationMinutes: Int,
+    val filters: Set<String>,
+    val exerciseNames: List<String>,
+    val estimatedCalories: Int
+)
+
+data class WorkoutRecommendation(
+    val planId: Int,
+    val title: String,
+    val reason: String
+)
+
+data class FitnessScore(
+    val value: Int,
+    val explanation: String,
+    val tips: List<String>
+)
+
+data class AIChatMessage(val role: String, val text: String)
+
+data class ProgressReport(
+    val userName: String,
+    val dateRange: String,
+    val workoutsCompleted: Int,
+    val caloriesBurned: Int,
+    val streak: Int,
+    val measurementSummary: String,
+    val waterSummary: String,
+    val fitnessScore: Int
+)
+
 data class PricingDisplay(val currency: String, val monthly: String, val yearly: String, val lifetime: String)
 
 data class WorkoutPlanWithExercises(

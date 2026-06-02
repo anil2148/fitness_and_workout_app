@@ -29,6 +29,15 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Offline community feed, trainer mode, AI form-check, recovery score, calendar, and specialized routine placeholders
 - Desk-worker, Indian fitness, low-impact, no-jumping, and apartment-friendly routine ideas
 - Material 3 UI with a responsive scrollable layout, rounded cards, icons, and simple animations
+- Quick Workout Mode with 5, 10, and 15-minute locally generated sessions plus no-equipment, low-impact, no-jumping, and office-friendly filters
+- Local adaptive workout recommendations based on goal, fitness level, recent completions, skipped sessions, available time, location, and Premium access
+- Fitness Score from 0 to 100 with a clear explanation and practical improvement tips
+- Premium AI-ready workout coach, meal suggestion, progress analysis, and motivation chat previews powered by local rule-based responses
+- Premium progress-report preview for workouts, calories, streak, body measurements, water intake, and fitness score with a future PDF export placeholder
+- Warm-up, cool-down, stop-workout warning, exercise safety tips, medical acknowledgement, and pregnancy or injury guidance
+- Splash screen, launcher icon placeholder, About, Contact Support, Rate App, Share App, Data Safety, and version-information sections
+- In-app workout and diet category hub for home training, beginner plans, HIIT, yoga, walking, office fitness, and Indian or vegetarian meal guidance
+- Offline app announcements, promo cards, featured workout cards, and new-challenge cards ready for a future Remote Config connection
 
 ## Tech Stack
 
@@ -93,9 +102,10 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 ## Future Integrations
 
 - Google Play Billing and AdMob
-- Firebase Auth, Analytics, Crashlytics, Firestore backup, and video CDN storage
+- Firebase Authentication, Google Sign-In, Analytics, Crashlytics, Firestore backup, Storage for video, Remote Config, and push notifications
 - Health Connect, Google Fit, and Wear OS
 - Real exercise videos and MediaPipe or ML Kit form analysis
+- Android `PdfDocument` export for Premium progress reports
 
 ## Future Monetization Ideas
 

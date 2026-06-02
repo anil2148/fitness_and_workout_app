@@ -22,6 +22,10 @@ import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.data.model.CommunityPost
 import com.example.fitnessworkout.data.model.RecoveryLog
+import com.example.fitnessworkout.data.model.SafetyAcknowledgement
+import com.example.fitnessworkout.data.model.AppAnnouncement
+import com.example.fitnessworkout.data.model.SupportMessage
+import com.example.fitnessworkout.data.model.SkippedWorkout
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -40,6 +44,9 @@ interface FitnessDao {
 
     @Query("SELECT * FROM exercises WHERE planId = :planId ORDER BY id")
     suspend fun getExercises(planId: Int): List<Exercise>
+
+    @Query("SELECT * FROM exercises ORDER BY id")
+    fun observeAllExercises(): Flow<List<Exercise>>
 
     @Insert
     suspend fun insertPlan(plan: WorkoutPlan): Long
@@ -134,6 +141,19 @@ interface FitnessDao {
     @Insert suspend fun insertRecovery(item: RecoveryLog)
     @Query("DELETE FROM app_settings") suspend fun deleteSettings()
     @Query("DELETE FROM recovery_logs") suspend fun deleteRecovery()
+
+    @Query("SELECT * FROM safety_acknowledgements WHERE id = 1") fun observeSafetyAcknowledgement(): Flow<SafetyAcknowledgement?>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertSafetyAcknowledgement(item: SafetyAcknowledgement)
+    @Query("SELECT * FROM app_announcements WHERE active = 1 ORDER BY id DESC") fun observeAnnouncements(): Flow<List<AppAnnouncement>>
+    @Insert suspend fun insertAnnouncements(items: List<AppAnnouncement>)
+    @Query("SELECT COUNT(*) FROM app_announcements") suspend fun announcementCount(): Int
+    @Query("SELECT * FROM support_messages ORDER BY createdAt DESC") fun observeSupportMessages(): Flow<List<SupportMessage>>
+    @Insert suspend fun insertSupportMessage(item: SupportMessage)
+    @Query("SELECT * FROM skipped_workouts ORDER BY skippedAt DESC") fun observeSkippedWorkouts(): Flow<List<SkippedWorkout>>
+    @Insert suspend fun insertSkippedWorkout(item: SkippedWorkout)
+    @Query("DELETE FROM safety_acknowledgements") suspend fun deleteSafetyAcknowledgements()
+    @Query("DELETE FROM support_messages") suspend fun deleteSupportMessages()
+    @Query("DELETE FROM skipped_workouts") suspend fun deleteSkippedWorkouts()
 
     @Query("SELECT COUNT(*) FROM workout_plans")
     suspend fun planCount(): Int

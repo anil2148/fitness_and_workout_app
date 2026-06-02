@@ -56,6 +56,24 @@ import com.example.fitnessworkout.ui.screens.SettingsScreen
 import com.example.fitnessworkout.ui.screens.SpecializedScreen
 import com.example.fitnessworkout.ui.screens.TrainerModeScreen
 import com.example.fitnessworkout.ui.screens.WhatsNewScreen
+import com.example.fitnessworkout.ui.screens.SplashScreen
+import com.example.fitnessworkout.ui.screens.QuickWorkoutScreen
+import com.example.fitnessworkout.ui.screens.FitnessScoreScreen
+import com.example.fitnessworkout.ui.screens.AIWorkoutCoachScreen
+import com.example.fitnessworkout.ui.screens.AIMealSuggestionScreen
+import com.example.fitnessworkout.ui.screens.AIProgressAnalysisScreen
+import com.example.fitnessworkout.ui.screens.AIMotivationChatScreen
+import com.example.fitnessworkout.ui.screens.ProgressReportScreen
+import com.example.fitnessworkout.ui.screens.WarmUpScreen
+import com.example.fitnessworkout.ui.screens.CoolDownScreen
+import com.example.fitnessworkout.ui.screens.SafetyScreen
+import com.example.fitnessworkout.ui.screens.AboutAppScreen
+import com.example.fitnessworkout.ui.screens.ContactSupportScreen
+import com.example.fitnessworkout.ui.screens.RateAppScreen
+import com.example.fitnessworkout.ui.screens.ShareAppScreen
+import com.example.fitnessworkout.ui.screens.DataSafetyScreen
+import com.example.fitnessworkout.ui.screens.ContentHubScreen
+import com.example.fitnessworkout.ui.screens.ContentCategoriesScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -80,7 +98,10 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             if (showBottomBar) FitnessBottomNavigation(navController, currentRoute)
         }
     ) { padding ->
-        NavHost(navController = navController, startDestination = "onboarding", modifier = Modifier) {
+        NavHost(navController = navController, startDestination = "splash", modifier = Modifier) {
+            composable("splash") {
+                SplashScreen { navController.navigate("onboarding") { popUpTo("splash") { inclusive = true } } }
+            }
             composable("onboarding") {
                 OnboardingScreen(viewModel) {
                     navController.navigate("home") { popUpTo("onboarding") { inclusive = true } }
@@ -99,9 +120,15 @@ fun FitnessApp(viewModel: FitnessViewModel) {
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
                 WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() }, onFinished = {
-                    navController.navigate("share") { popUpTo("workouts") }
+                    navController.navigate("cooldown") { popUpTo("workouts") }
                 })
             }
+            composable("warmup/{planId}") { entry ->
+                val planId = entry.arguments?.getString("planId")?.toIntOrNull()
+                LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
+                WarmUpScreen(start = { navController.navigate("detail/$planId") }, back = { navController.popBackStack() })
+            }
+            composable("cooldown") { CoolDownScreen { navController.navigate("share") { popUpTo("workouts") } } }
             composable("premium") { PremiumScreen(viewModel, onBack = { navController.popBackStack() }) }
             composable("water") { WaterScreen(viewModel) { navController.popBackStack() } }
             composable("calculators") { CalculatorScreen(viewModel) { navController.popBackStack() } }
@@ -130,6 +157,21 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("whats-new") { WhatsNewScreen { navController.popBackStack() } }
             composable("bug-report") { BugReportScreen { navController.popBackStack() } }
             composable("regional-pricing") { MonetizationScreen { navController.popBackStack() } }
+            composable("quick-workout") { QuickWorkoutScreen(viewModel) { navController.popBackStack() } }
+            composable("fitness-score") { FitnessScoreScreen(viewModel) { navController.popBackStack() } }
+            composable("ai-workout") { AIWorkoutCoachScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("ai-meal") { AIMealSuggestionScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("ai-progress") { AIProgressAnalysisScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("ai-chat") { AIMotivationChatScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("progress-report") { ProgressReportScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
+            composable("safety") { SafetyScreen { navController.popBackStack() } }
+            composable("about") { AboutAppScreen { navController.popBackStack() } }
+            composable("contact-support") { ContactSupportScreen(viewModel) { navController.popBackStack() } }
+            composable("rate-app") { RateAppScreen { navController.popBackStack() } }
+            composable("share-app") { ShareAppScreen { navController.popBackStack() } }
+            composable("data-safety") { DataSafetyScreen { navController.popBackStack() } }
+            composable("announcements") { ContentHubScreen(viewModel) { navController.popBackStack() } }
+            composable("content-categories") { ContentCategoriesScreen { navController.popBackStack() } }
         }
     }
 }
@@ -156,5 +198,5 @@ private fun FitnessBottomNavigation(navController: NavHostController, currentRou
 
 private fun openPlan(navController: NavHostController, viewModel: FitnessViewModel, planId: Int) {
     viewModel.selectPlan(planId)
-    navController.navigate("detail/$planId")
+    navController.navigate("warmup/$planId")
 }

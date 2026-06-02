@@ -20,7 +20,14 @@ import com.example.fitnessworkout.data.model.ShareableWorkoutSummary
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.data.model.CommunityPost
 import com.example.fitnessworkout.data.model.RecoveryLog
+import com.example.fitnessworkout.data.model.SafetyAcknowledgement
+import com.example.fitnessworkout.data.model.AppAnnouncement
+import com.example.fitnessworkout.data.model.SupportMessage
+import com.example.fitnessworkout.data.model.SkippedWorkout
+import com.example.fitnessworkout.data.model.QuickWorkout
+import com.example.fitnessworkout.data.model.ProgressReport
 import com.example.fitnessworkout.repository.FitnessRepository
+import com.example.fitnessworkout.utils.LocalFitnessEngine
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -59,12 +66,19 @@ data class FitnessUiState(
     val shareSummaries: List<ShareableWorkoutSummary> = emptyList(),
     val settings: AppSettings = AppSettings(),
     val communityPosts: List<CommunityPost> = emptyList(),
-    val recovery: List<RecoveryLog> = emptyList()
+    val recovery: List<RecoveryLog> = emptyList(),
+    val allExercises: List<Exercise> = emptyList(),
+    val safetyAcknowledgement: SafetyAcknowledgement = SafetyAcknowledgement(),
+    val announcements: List<AppAnnouncement> = emptyList(),
+    val supportMessages: List<SupportMessage> = emptyList(),
+    val skippedWorkouts: List<SkippedWorkout> = emptyList()
 ) {
     val standardPlans get() = plans.filter { it.challengeDay == null }
     val challengePlans get() = plans.filter { it.challengeDay != null }.sortedBy { it.challengeDay }
     val todayWorkout get() = standardPlans.firstOrNull()
     val completedPlanIds get() = history.map { it.planId }.toSet()
+    val recommendation get() = LocalFitnessEngine.recommendation(user, standardPlans, history, skippedWorkouts, settings.workoutLocation, isPremiumUser)
+    val fitnessScore get() = LocalFitnessEngine.fitnessScore(history, streak, weeklyCount, fitnessTests, water, measurements)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -81,7 +95,8 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         repository.reminders,
         repository.customPlans
         , repository.measurements, repository.photos, repository.achievements, repository.fitnessTests, repository.shareSummaries,
-        repository.settings, repository.communityPosts, repository.recovery
+        repository.settings, repository.communityPosts, repository.recovery, repository.allExercises,
+        repository.safetyAcknowledgement, repository.announcements, repository.supportMessages, repository.skippedWorkouts
     ) { values ->
         val user = values[0] as UserProfile?
         @Suppress("UNCHECKED_CAST") val plans = values[1] as List<WorkoutPlan>
@@ -99,6 +114,11 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         val settings = values[13] as AppSettings?
         @Suppress("UNCHECKED_CAST") val communityPosts = values[14] as List<CommunityPost>
         @Suppress("UNCHECKED_CAST") val recovery = values[15] as List<RecoveryLog>
+        @Suppress("UNCHECKED_CAST") val allExercises = values[16] as List<Exercise>
+        val safetyAcknowledgement = values[17] as SafetyAcknowledgement?
+        @Suppress("UNCHECKED_CAST") val announcements = values[18] as List<AppAnnouncement>
+        @Suppress("UNCHECKED_CAST") val supportMessages = values[19] as List<SupportMessage>
+        @Suppress("UNCHECKED_CAST") val skippedWorkouts = values[20] as List<SkippedWorkout>
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -114,7 +134,9 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             reminders = reminders ?: ReminderSettings(),
             customPlans = customPlans, measurements = measurements, photos = photos, achievements = achievements,
             fitnessTests = fitnessTests, shareSummaries = shareSummaries, settings = settings ?: AppSettings(),
-            communityPosts = communityPosts, recovery = recovery
+            communityPosts = communityPosts, recovery = recovery, allExercises = allExercises,
+            safetyAcknowledgement = safetyAcknowledgement ?: SafetyAcknowledgement(), announcements = announcements,
+            supportMessages = supportMessages, skippedWorkouts = skippedWorkouts
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FitnessUiState())
 
@@ -189,6 +211,26 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
     fun saveRecovery(sleep: Float, soreness: Int, energy: Int, stress: Int) = viewModelScope.launch {
         val recommendation = when { sleep < 6 || stress > 7 -> "Rest day"; soreness > 6 -> "Light stretching"; energy > 7 -> "Strength workout"; else -> "Moderate workout" }
         repository.saveRecovery(RecoveryLog(sleepHours = sleep, soreness = soreness, energy = energy, stress = stress, recommendation = recommendation))
+    }
+    fun quickWorkout(minutes: Int, filters: Set<String>) = LocalFitnessEngine.quickWorkout(uiState.value.allExercises, minutes, filters)
+    fun completeQuickWorkout(workout: QuickWorkout) = viewModelScope.launch { repository.completeQuickWorkout(workout, uiState.value.streak) }
+    fun acknowledgeSafety() = viewModelScope.launch { repository.acknowledgeSafety() }
+    fun skipSelectedWorkout() = selectedPlan.value?.let { plan -> viewModelScope.launch { repository.skipWorkout(plan) } }
+    fun sendSupportMessage(email: String, message: String) = viewModelScope.launch {
+        if (email.isNotBlank() && message.isNotBlank()) repository.sendSupportMessage(email.trim(), message.trim())
+    }
+    fun progressReport(): ProgressReport {
+        val state = uiState.value
+        return ProgressReport(
+            userName = state.user?.name ?: "Fitness member",
+            dateRange = "All locally tracked activity",
+            workoutsCompleted = state.history.size,
+            caloriesBurned = state.totalCalories,
+            streak = state.streak,
+            measurementSummary = state.measurements.firstOrNull()?.let { "${it.weightKg} kg, waist ${it.waistCm} cm" } ?: "No measurements recorded",
+            waterSummary = "${state.water.amountMl} / ${state.water.goalMl} ml today",
+            fitnessScore = state.fitnessScore.value
+        )
     }
 
     private fun isCurrentWeek(timestamp: Long): Boolean {

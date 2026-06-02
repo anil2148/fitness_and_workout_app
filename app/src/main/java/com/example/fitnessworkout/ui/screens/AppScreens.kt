@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -106,6 +107,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var unitSystem by remember { mutableStateOf("Imperial") }
     var diet by remember { mutableStateOf("Balanced") }
     var location by remember { mutableStateOf("Home") }
+    var acceptedDisclaimer by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -135,12 +137,19 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
         item { OnboardingChoices("Diet preference", listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly"), diet) { diet = it } }
         item { OnboardingChoices("Workout location", listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping"), location) { location = it } }
         item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(acceptedDisclaimer, { acceptedDisclaimer = it })
+                Text("I understand this app provides general wellness guidance, not medical advice. I will consult a healthcare professional for pregnancy, injury, or medical concerns.")
+            }
+        }
+        item {
             Button(
                 onClick = {
                     viewModel.saveUser(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal, level = level, minutes = minutes, equipment = equipment, style = style)
                     viewModel.saveSettings(AppSettings(country = country, language = language, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location))
+                    viewModel.acknowledgeSafety()
                 },
-                enabled = name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
+                enabled = acceptedDisclaimer && name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) { Text("Create my fitness plan") }
         }
@@ -193,6 +202,27 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
             ChallengeProgress(challengeCompleted)
         }
         item {
+            SectionTitle("Recommended for You", "Local suggestions adapt to your goal, recent activity, available time, and workout location.")
+        }
+        state.recommendation?.let { recommendation ->
+            item {
+                Card(onClick = { onPlan(recommendation.planId) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                    Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(recommendation.title, fontWeight = FontWeight.Bold)
+                        Text(recommendation.reason, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        item {
+            Card(onClick = { onNavigate("fitness-score") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fitness score", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text("${state.fitnessScore.value} / 100", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
+                }
+            }
+        }
+        item {
             SectionTitle("Today's workout", "A simple session to keep your momentum.")
         }
         state.todayWorkout?.let { plan ->
@@ -200,7 +230,7 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickButton("Start Workout", Modifier.weight(1f)) { state.todayWorkout?.let { onPlan(it.id) } }
+                QuickButton("Quick Start", Modifier.weight(1f)) { onNavigate("quick-workout") }
                 QuickButton("My Plan", Modifier.weight(1f)) { onNavigate("workouts") }
             }
         }
@@ -278,6 +308,7 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
     val completed = remember(plan?.id) { mutableStateListOf<Int>() }
     var activeTimerExercise by remember { mutableStateOf<Int?>(null) }
     var remainingSeconds by remember { mutableIntStateOf(0) }
+    var showStopWarning by remember { mutableStateOf(false) }
 
     LaunchedEffect(activeTimerExercise, remainingSeconds) {
         if (activeTimerExercise != null && remainingSeconds > 0) {
@@ -291,7 +322,7 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
 
     Scaffold(topBar = {
         TopAppBar(title = { Text(plan?.title ?: "Workout") }, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            IconButton(onClick = { showStopWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
         })
     }) { padding ->
         LazyColumn(
@@ -322,6 +353,9 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
                 )
             }
             item {
+                OutlinedButton(onClick = { showStopWarning = true }, modifier = Modifier.fillMaxWidth()) { Text("Stop workout") }
+            }
+            item {
                 Button(
                     onClick = {
                         viewModel.completeSelectedWorkout()
@@ -333,6 +367,13 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
             }
         }
     }
+    if (showStopWarning) AlertDialog(
+        onDismissRequest = { showStopWarning = false },
+        title = { Text("Stop this workout?") },
+        text = { Text("Stop immediately if you feel pain, dizziness, unusual shortness of breath, or discomfort. Ending now will record a skipped workout so future recommendations can adapt.") },
+        confirmButton = { TextButton({ viewModel.skipSelectedWorkout(); showStopWarning = false; onBack() }) { Text("End workout") } },
+        dismissButton = { TextButton({ showStopWarning = false }) { Text("Continue safely") } }
+    )
 }
 
 @Composable
@@ -441,7 +482,12 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
                 "photos" to "Progress photos", "achievements" to "Achievements", "fitness-test" to "Fitness level test",
                 "share" to "Workout share card", "privacy" to "Privacy policy", "terms" to "Terms",
                 "medical" to "Medical disclaimer", "feedback" to "Feedback", "delete-data" to "Delete all data",
-                "settings" to "Global settings", "regional-pricing" to "Regional pricing preview").forEach { (route, label) ->
+                "settings" to "Global settings", "regional-pricing" to "Regional pricing preview", "quick-workout" to "Quick workouts",
+                "fitness-score" to "Fitness score", "ai-workout" to "AI-ready workout coach", "ai-meal" to "AI-ready meal suggestions",
+                "ai-progress" to "AI-ready progress analysis", "ai-chat" to "AI-ready motivation chat", "progress-report" to "PDF report preview",
+                "safety" to "Safety and trust", "about" to "About app", "contact-support" to "Contact support",
+                "rate-app" to "Rate app", "share-app" to "Share app", "data-safety" to "Data safety",
+                "announcements" to "Announcements", "content-categories" to "Workout and diet categories").forEach { (route, label) ->
                 OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
             }
         }
