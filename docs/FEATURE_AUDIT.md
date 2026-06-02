@@ -40,7 +40,7 @@ This audit documents the stabilized offline-first Android app. Statuses describe
 | 32 | Reminder settings | Working | Preferences persist locally; notification scheduling remains placeholder. |
 | 33 | Settings screen | Working | Country, language preference, units, diet, location, consent placeholders, and injury-safe setting persist. |
 | 34 | Profile screen | Fixed | Edit validation, reset confirmation, and safe links work. |
-| 35 | Language settings | Known limitation | Preference persists and resource packs exist; runtime locale switching is not implemented. |
+| 35 | Language settings | Fixed | DataStore persists `en`, `hi`, `es`, `fr`, or `ar`; the locale context is applied before Compose loads and Settings recreates the activity after a language change. |
 | 36 | Metric/imperial unit settings | Working | Display conversions work; profile entry remains metric. |
 | 37 | Privacy policy screen | Working | Local privacy summary renders safely. |
 | 38 | Terms screen | Working | Local terms summary renders safely. |
@@ -76,6 +76,7 @@ The following integrations intentionally remain offline-safe Coming Soon placeho
 | Health calculators | Fixed | BMI, BMR, calorie needs, and water intake use extracted validated calculations. | `./gradlew testDebugUnitTest` |
 | Unit settings | Fixed | Profile and supported tracking displays use metric or imperial formatting. | Manual code-path check |
 | Legal and data controls | Working | Settings and Profile route to privacy, terms, medical disclaimer, consent, export, and confirmed deletion. | Manual code-path check |
+| Runtime language switching | Fixed | DataStore persistence, pre-Compose locale wrapping, immediate Settings refresh, complete resource-key parity, English fallback, and Arabic RTL manifest support are wired. | `./gradlew testDebugUnitTest`; `./gradlew clean assembleDebug` |
 | Premium and unfinished integrations | Working | Locked content routes to Premium; incomplete production integrations remain explicit Coming Soon placeholders. | Manual code-path check |
 | Debug APK generation | Working | Verification script builds and confirms the expected APK path. | `./scripts/verify_app.sh` |
 
@@ -103,7 +104,19 @@ app/build/outputs/apk/debug/app-debug.apk
 ## Known Limitations
 
 - Debug APK only; Play Store publishing still requires signed release configuration.
-- Language preference persists, but runtime locale switching is not wired yet.
+- Secondary content may remain English where translated copy is not available; the complete resource-key catalog and Android fallback behavior avoid missing-key crashes.
 - Profile and calculator entry fields use metric input; selected units affect supported displays.
 - Progress photos store local picker URIs and are not cloud backed up.
 - Notification scheduling and external service integrations remain intentionally disabled.
+
+## Language Switching Audit
+
+| Scenario | Result | Evidence |
+|---|---|---|
+| Default language is English | Working | DataStore falls back to `en`; JVM fallback test passes. |
+| Change language to Hindi | Working | Settings saves `hi`, displays a restart toast, and recreates the activity. |
+| Home, Profile, and Settings update | Working | Major labels use localized resources; code-path audit completed. |
+| Restart keeps Hindi | Working | `MainActivity.attachBaseContext()` reads DataStore before Compose starts. |
+| Change back to English and restart | Working | Settings persists `en`; JVM name/code mapping test passes. |
+| Arabic selection and RTL | Working | `ar` mapping test passes, locale wrapper updates layout direction, and manifest has `android:supportsRtl="true"`. |
+| Missing translation keys | Fixed | English, Hindi, Spanish, French, and Arabic folders each contain the same 126 keys. |

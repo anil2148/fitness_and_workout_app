@@ -36,7 +36,7 @@ import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
         AppSettings::class, CommunityPost::class, RecoveryLog::class, SafetyAcknowledgement::class,
         AppAnnouncement::class, SupportMessage::class, SkippedWorkout::class, DailyHabit::class,
         FavoriteWorkout::class, RecentlyViewedWorkout::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class FitnessDatabase : RoomDatabase() {

@@ -2,6 +2,7 @@ package com.example.fitnessworkout.repository
 
 import com.example.fitnessworkout.data.SampleData
 import com.example.fitnessworkout.data.local.FitnessDao
+import com.example.fitnessworkout.data.local.AppPreferences
 import com.example.fitnessworkout.data.model.CompletedWorkout
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
@@ -28,8 +29,10 @@ import com.example.fitnessworkout.data.model.DailyHabit
 import com.example.fitnessworkout.data.model.FavoriteWorkout
 import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import java.time.LocalDate
+import kotlinx.coroutines.flow.first
+import com.example.fitnessworkout.utils.AppLocaleManager
 
-class FitnessRepository(private val dao: FitnessDao) {
+class FitnessRepository(private val dao: FitnessDao, private val appPreferences: AppPreferences) {
     val user = dao.observeUser()
     val plans = dao.observePlans()
     val completedWorkouts = dao.observeCompletedWorkouts()
@@ -58,6 +61,14 @@ class FitnessRepository(private val dao: FitnessDao) {
     fun exercises(planId: Int) = dao.observeExercises(planId)
 
     suspend fun initialize() {
+        val languageCode = AppLocaleManager.safeLanguageCode(appPreferences.languageCode.first())
+        val settings = dao.getSettings()
+        if (settings == null || settings.selectedLanguageCode != languageCode) {
+            dao.upsertSettings((settings ?: AppSettings()).copy(
+                language = AppLocaleManager.languageName(languageCode),
+                selectedLanguageCode = languageCode,
+            ))
+        }
         if (dao.planCount() == 0) {
             SampleData.plans().forEach { dao.insertPlanWithExercises(it.plan, it.exercises) }
         }
@@ -135,7 +146,10 @@ class FitnessRepository(private val dao: FitnessDao) {
         dao.deleteSupportMessages(); dao.deleteSkippedWorkouts(); dao.deleteDailyHabits()
         dao.deleteFavoriteWorkouts(); dao.deleteRecentlyViewedWorkouts()
     }
-    suspend fun saveSettings(item: AppSettings) = dao.upsertSettings(item)
+    suspend fun saveSettings(item: AppSettings) {
+        dao.upsertSettings(item)
+        appPreferences.setLanguageCode(item.selectedLanguageCode)
+    }
     suspend fun saveRecovery(item: RecoveryLog) = dao.insertRecovery(item)
     suspend fun acknowledgeSafety() = dao.upsertSafetyAcknowledgement(SafetyAcknowledgement(medicalDisclaimerAccepted = true, acceptedAt = System.currentTimeMillis()))
     suspend fun sendSupportMessage(email: String, message: String) = dao.insertSupportMessage(SupportMessage(email = email, message = message))

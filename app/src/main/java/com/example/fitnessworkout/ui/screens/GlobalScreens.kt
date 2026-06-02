@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,20 +20,26 @@ import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import androidx.compose.ui.res.stringResource
 import com.example.fitnessworkout.R
+import com.example.fitnessworkout.utils.AppLocaleManager
 
 @Composable fun SettingsScreen(vm: FitnessViewModel, back: () -> Unit, navigate: (String) -> Unit) {
+    val context = LocalContext.current
     val state by vm.uiState.collectAsState(); var settings by remember(state.settings) { mutableStateOf(state.settings) }
     GlobalPage(stringResource(R.string.settings_title), back) {
-        Choice("Country / region", settings.country, countries) { settings = settings.copy(country = it, unitSystem = Units.defaultSystem(it)) }
-        Choice("Language", settings.language, listOf("English", "Hindi", "Spanish", "French", "Arabic")) { settings = settings.copy(language = it) }
-        Choice("Unit system", settings.unitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(unitSystem = it) }
-        Choice("Diet preference", settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
-        Choice("Workout location", settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
-        Toggle("Prefer injury-safe recommendations", settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
-        Toggle("Analytics consent placeholder", settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
-        Toggle("Cloud sync consent placeholder", settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
-        Button({ vm.saveSettings(settings) }, Modifier.fillMaxWidth()) { Text("Save global settings") }
-        Text("Premium: ${if (state.isPremiumUser) "Active" else "Free"} • App version 1.0")
+        Choice(stringResource(R.string.country_region), settings.country, countries) { settings = settings.copy(country = it, unitSystem = Units.defaultSystem(it)) }
+        LanguageChoice(settings.selectedLanguageCode) { code ->
+            val updated = settings.copy(language = AppLocaleManager.languageName(code), selectedLanguageCode = code)
+            settings = updated
+            vm.saveSettings(updated) { AppLocaleManager.restartUi(context) }
+        }
+        Choice(stringResource(R.string.unit_system), settings.unitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(unitSystem = it) }
+        Choice(stringResource(R.string.diet_preference), settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
+        Choice(stringResource(R.string.workout_location), settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
+        Toggle(stringResource(R.string.prefer_injury_safe), settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
+        Toggle(stringResource(R.string.analytics_consent), settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
+        Toggle(stringResource(R.string.cloud_sync_consent), settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
+        Button({ vm.saveSettings(settings) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
+        Text("${if (state.isPremiumUser) stringResource(R.string.premium_member) else "Free"} • ${stringResource(R.string.app_version)}")
         listOf("community" to "Community", "trainer" to "Trainer mode", "form-check" to "AI form check", "specialized" to "Specialized routines",
             "calendar" to "Smart calendar", "recovery" to "Recovery score", "export-data" to "Export my data", "consent" to "Data consent",
             "whats-new" to "What's new", "bug-report" to "Bug report", "daily-habits" to "Daily habits",
@@ -56,9 +63,10 @@ import com.example.fitnessworkout.R
 @Composable fun MonetizationScreen(back: () -> Unit) { val pricing = regionalPricing; GlobalPage("Regional pricing preview", back) { Text("7-day free trial • Limited-time lifetime offer", fontWeight = FontWeight.Bold); pricing.forEach { Text("${it.currency}: ${it.monthly} monthly • ${it.yearly} yearly • ${it.lifetime} lifetime") }; Text("Promo code placeholder • Referral code placeholder"); Text("TODO: Replace display models with Google Play Billing regional offers.") } }
 
 @Composable private fun PremiumPlaceholder(vm: FitnessViewModel, title: String, text: String, back: () -> Unit, premium: () -> Unit) { val state by vm.uiState.collectAsState(); if (!state.isPremiumUser) GlobalPage(title, back) { Icon(Icons.Default.Lock, null); Text("Premium feature"); Button(premium) { Text("View Premium") } } else ComingSoonScreen(title, text, back) }
-@Composable fun ComingSoonScreen(title: String, text: String, back: () -> Unit) = GlobalPage(title, back) { Text("Coming soon", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(text) }
+@Composable fun ComingSoonScreen(title: String, text: String, back: () -> Unit) = GlobalPage(title, back) { Text(stringResource(R.string.coming_soon), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(text) }
 @Composable private fun Toggle(label: String, checked: Boolean, change: (Boolean) -> Unit) = Row(Modifier.fillMaxWidth()) { Text(label, Modifier.weight(1f)); Switch(checked, change) }
 @Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text("$label: $value") }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(it) }, { change(it); open = false }) } } } }
+@Composable private fun LanguageChoice(selectedCode: String, change: (String) -> Unit) = Choice(stringResource(R.string.language), AppLocaleManager.languageName(selectedCode), AppLocaleManager.supportedLanguages.map { it.label }) { change(AppLocaleManager.languageCode(it)) }
 @Composable private fun Num(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
 @OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }
 private val countries = listOf("United States", "India", "Spain", "France", "United Arab Emirates", "Brazil", "United Kingdom")

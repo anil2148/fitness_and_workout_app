@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 import com.example.fitnessworkout.data.model.ReminderSettings
 import com.example.fitnessworkout.ui.components.ChallengeProgress
 import com.example.fitnessworkout.ui.components.SectionTitle
@@ -32,7 +34,7 @@ import com.example.fitnessworkout.utils.Units
 
 @Composable fun WaterScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); var custom by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }
-    FeaturePage("Water tracker", back) {
+    FeaturePage(stringResource(R.string.water_tracker), back) {
         Text("${Units.water(state.water.amountMl, state.settings.unitSystem)} / ${Units.water(state.water.goalMl, state.settings.unitSystem)}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         LinearProgressIndicator({ (state.water.amountMl / state.water.goalMl.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
         Button({ vm.addWater(250) }, Modifier.fillMaxWidth()) { Text("Add 250 ml") }
@@ -50,7 +52,7 @@ import com.example.fitnessworkout.utils.Units
 @Composable fun CalculatorScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); val user = state.user
     var weight by remember { mutableStateOf(user?.weightKg?.toString().orEmpty()) }; var height by remember { mutableStateOf(user?.heightCm?.toString().orEmpty()) }; var age by remember { mutableStateOf(user?.age?.toString().orEmpty()) }; var error by remember { mutableStateOf<String?>(null) }
-    FeaturePage("Health calculators", back) {
+    FeaturePage(stringResource(R.string.health_calculators), back) {
         Field(weight, { weight = it }, "Weight (kg)", true); Field(height, { height = it }, "Height (cm)", true); Field(age, { age = it }, "Age", true)
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button({

@@ -3,6 +3,7 @@ package com.example.fitnessworkout.data.local
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.map
 
@@ -14,9 +15,15 @@ private val Context.dataStore by preferencesDataStore("fitness_preferences")
  */
 class AppPreferences(private val context: Context) {
     private val privacyAccepted = booleanPreferencesKey("privacy_accepted")
+    private val selectedLanguageCode = stringPreferencesKey("selected_language_code")
     val hasAcceptedPrivacy = context.dataStore.data.map { it[privacyAccepted] ?: false }
+    val languageCode = context.dataStore.data.map { it[selectedLanguageCode] ?: "en" }
 
     suspend fun setPrivacyAccepted(accepted: Boolean) {
         context.dataStore.edit { it[privacyAccepted] = accepted }
+    }
+
+    suspend fun setLanguageCode(languageCode: String) {
+        context.dataStore.edit { it[selectedLanguageCode] = languageCode }
     }
 }

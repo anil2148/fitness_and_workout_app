@@ -136,6 +136,7 @@ interface FitnessDao {
     @Query("DELETE FROM premium_status") suspend fun deletePremiumStatus()
 
     @Query("SELECT * FROM app_settings WHERE id = 1") fun observeSettings(): Flow<AppSettings?>
+    @Query("SELECT * FROM app_settings WHERE id = 1") suspend fun getSettings(): AppSettings?
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertSettings(item: AppSettings)
     @Query("SELECT * FROM community_posts ORDER BY id DESC") fun observeCommunityPosts(): Flow<List<CommunityPost>>
     @Insert suspend fun insertCommunityPosts(items: List<CommunityPost>)

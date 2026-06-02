@@ -36,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.ui.components.ExerciseIllustration
 import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
@@ -77,8 +79,8 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text(plan?.title ?: "Guided workout") },
-            navigationIcon = { IconButton({ showExitWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }
+            title = { Text(plan?.title ?: stringResource(R.string.guided_workout)) },
+            navigationIcon = { IconButton({ showExitWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }
         )
     }) { padding ->
         Column(
@@ -86,25 +88,25 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (exercise == null) {
-                Text("Workout exercises are loading. Go back and try again if this message remains visible.")
+                Text(stringResource(R.string.loading_exercises))
             } else {
-                Text("Exercise ${index + 1} of ${exercises.size}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.exercise_of, index + 1, exercises.size), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 LinearProgressIndicator({ (index + 1) / exercises.size.toFloat() }, Modifier.fillMaxWidth())
                 ExerciseIllustration(exercise, Modifier.fillMaxWidth().height(190.dp))
                 ExerciseVideoPlayer(exercise, state.isPremiumUser, onPremium)
-                Text(if (resting) "Rest" else exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+                Text(if (resting) stringResource(R.string.rest) else exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
                 if (resting) {
-                    Text("Breathe, hydrate if needed, and prepare for the next exercise.")
+                    Text(stringResource(R.string.rest_help))
                 } else {
                     Text(exercise.repsOrDuration)
                     Text(exercise.instruction)
-                    Text("Safety: ${exercise.safetyTips}", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.safety_value, exercise.safetyTips), color = MaterialTheme.colorScheme.error)
                 }
-                Text("$remainingSeconds sec", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.seconds_value, remainingSeconds), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button({ running = !running }, Modifier.weight(1f)) {
                         Icon(if (running) Icons.Default.Pause else Icons.Default.PlayArrow, null)
-                        Text(if (running) " Pause" else if (remainingSeconds < exercise.playerSeconds()) " Resume" else " Start")
+                        Text(" " + if (running) stringResource(R.string.pause) else if (remainingSeconds < exercise.playerSeconds()) stringResource(R.string.resume) else stringResource(R.string.start))
                     }
                     OutlinedButton({
                         running = false
@@ -113,7 +115,7 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                             vm.completeSelectedWorkout()
                             finished()
                         }
-                    }, Modifier.weight(1f)) { Text(if (index < exercises.lastIndex) "Next" else "Finish") }
+                    }, Modifier.weight(1f)) { Text(if (index < exercises.lastIndex) stringResource(R.string.next) else stringResource(R.string.finish)) }
                 }
                 OutlinedButton({
                     running = false
@@ -122,14 +124,14 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                         vm.completeSelectedWorkout()
                         finished()
                     }
-                }, Modifier.fillMaxWidth()) { Text("Skip exercise") }
+                }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.skip_exercise)) }
                 OutlinedButton({
                     running = false
                     vm.completeSelectedWorkout()
                     finished()
-                }, Modifier.fillMaxWidth()) { Text("Finish workout") }
+                }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
                 exercises.getOrNull(index + 1)?.let { next ->
-                    Text("Next exercise", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.next_exercise), fontWeight = FontWeight.Bold)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         ExerciseIllustration(next, Modifier.size(width = 92.dp, height = 58.dp))
                         Text(next.name)
@@ -140,10 +142,10 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
     }
     if (showExitWarning) AlertDialog(
         onDismissRequest = { showExitWarning = false },
-        title = { Text("Stop this workout?") },
-        text = { Text("Stop if you feel pain, dizziness, chest pain, or severe discomfort. Ending now records a skipped workout so future recommendations can adapt.") },
-        confirmButton = { TextButton({ vm.skipSelectedWorkout(); showExitWarning = false; back() }) { Text("End workout") } },
-        dismissButton = { TextButton({ showExitWarning = false }) { Text("Continue safely") } }
+        title = { Text(stringResource(R.string.stop_question)) },
+        text = { Text(stringResource(R.string.stop_message)) },
+        confirmButton = { TextButton({ vm.skipSelectedWorkout(); showExitWarning = false; back() }) { Text(stringResource(R.string.end_workout)) } },
+        dismissButton = { TextButton({ showExitWarning = false }) { Text(stringResource(R.string.continue_safely)) } }
     )
 }
 

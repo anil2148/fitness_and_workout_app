@@ -23,8 +23,8 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Smart reminders for workouts, water, meals, weight check-ins, and progress photos
 - Privacy policy, terms, medical disclaimer, feedback, and local delete-all-data screens
 - Improved onboarding for goal, level, available time, equipment, age, height, weight, and workout style
-- Global onboarding and settings for country, language, metric or imperial units, diet, and workout location
-- English, Hindi, Spanish, French, and Arabic resource packs with RTL manifest support
+- Global onboarding and settings for country, persisted runtime language, metric or imperial units, diet, and workout location
+- Runtime language switching for English, Hindi, Spanish, French, and Arabic with DataStore persistence, immediate UI refresh, safe fallback, and RTL manifest support
 - Regional pricing display models for USD, INR, EUR, GBP, and BRL
 - Offline community feed, trainer mode, AI form-check, recovery score, calendar, and specialized routine placeholders
 - Desk-worker, Indian fitness, low-impact, no-jumping, and apartment-friendly routine ideas
@@ -94,6 +94,9 @@ Workout plans are inserted into the local Room database the first time the app l
 ## Global Support
 
 - Supported resource packs: English, Hindi, Spanish, French, and Arabic
+- Supported locale codes: `en`, `hi`, `es`, `fr`, and `ar`
+- The selected locale code persists in DataStore and is applied before Compose loads.
+- Changing language in Settings saves the new locale and safely recreates the activity so visible text updates immediately.
 - Supported units: metric and imperial
 - Add translations in `app/src/main/res/values-<locale>/strings.xml`
 - Regional prices are display models only. Replace them with Google Play Billing product details before release.
@@ -152,7 +155,7 @@ Only use app-owned, licensed, or confirmed royalty-free photos, illustrations, a
 
 ## Known Limitations
 
-- Runtime locale switching is not wired yet, although language preference and translation resource packs are present.
+- Some secondary content remains English where a translated phrase is not available; Android resource fallback remains safe.
 - Profile and calculator input fields use metric entry values; selected units affect supported displays.
 - Progress photos use local picker URIs and are not uploaded or cloud backed up.
 - The generated APK is a debug build. Create a signed release bundle before Play Store submission.

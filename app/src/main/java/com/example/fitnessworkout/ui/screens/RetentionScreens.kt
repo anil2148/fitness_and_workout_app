@@ -87,9 +87,9 @@ import java.time.ZoneId
     }
 }
 
-@Composable fun PrivacyPolicyScreen(back: () -> Unit) = LegalScreen("Privacy policy", "Your fitness data stays on this device. Progress photo URIs are stored locally. No analytics or advertising SDK is connected.", back)
-@Composable fun TermsScreen(back: () -> Unit) = LegalScreen("Terms", "Use the app responsibly. Premium purchase buttons are local mock controls until billing integration is added.", back)
-@Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen("Medical disclaimer", stringResource(R.string.medical_disclaimer), back)
+@Composable fun PrivacyPolicyScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.privacy_policy), stringResource(R.string.privacy_body), back)
+@Composable fun TermsScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.terms), stringResource(R.string.terms_body), back)
+@Composable fun MedicalDisclaimerScreen(back: () -> Unit) = LegalScreen(stringResource(R.string.medical_disclaimer_title), stringResource(R.string.medical_disclaimer), back)
 @Composable fun DeleteAllDataScreen(vm: FitnessViewModel, back: () -> Unit) { var confirm by remember { mutableStateOf(false) }; LegalScreen("Delete all data", "This removes your local profile, tracking history, photos, tests, reminders, and generated plans.", back) { Button({ confirm = true }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete local data") } }; if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Delete all local data?") }, text = { Text("This cannot be undone.") }, confirmButton = { TextButton({ vm.deleteAllData(); confirm = false; back() }) { Text("Delete") } }, dismissButton = { TextButton({ confirm = false }) { Text("Cancel") } }) }
 
 @Composable private fun PhotoCard(label: String, uri: String, modifier: Modifier) = Card(modifier) { Column(Modifier.padding(12.dp)) { Text(label, fontWeight = FontWeight.Bold); AsyncImage(model = uri, contentDescription = label, modifier = Modifier.fillMaxWidth().height(160.dp)); Text(uri.take(32), style = MaterialTheme.typography.bodySmall) } }

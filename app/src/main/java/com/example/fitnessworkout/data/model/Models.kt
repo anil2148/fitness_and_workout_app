@@ -177,6 +177,7 @@ data class AppSettings(
     @PrimaryKey val id: Int = 1,
     val country: String = "United States",
     val language: String = "English",
+    val selectedLanguageCode: String = "en",
     val unitSystem: String = "Metric",
     val dietPreference: String = "Balanced",
     val workoutLocation: String = "Home",

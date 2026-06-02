@@ -229,7 +229,29 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         }
     }
     fun deleteAllData() = viewModelScope.launch { repository.deleteAllData() }
-    fun saveSettings(item: AppSettings) = viewModelScope.launch { repository.saveSettings(item) }
+    fun saveSettings(item: AppSettings, onSaved: (() -> Unit)? = null) = viewModelScope.launch {
+        repository.saveSettings(item)
+        onSaved?.invoke()
+    }
+    fun completeOnboarding(
+        name: String,
+        age: Int,
+        weight: Float,
+        height: Float,
+        goal: String,
+        level: String,
+        minutes: Int,
+        equipment: String,
+        style: String,
+        settings: AppSettings,
+        onSaved: (() -> Unit)? = null,
+    ) = viewModelScope.launch {
+        repository.saveUser(UserProfile(name = name, age = age, weightKg = weight, heightCm = height, fitnessGoal = goal,
+            fitnessLevel = level, availableMinutes = minutes, equipment = equipment, workoutStyle = style))
+        repository.saveSettings(settings)
+        repository.acknowledgeSafety()
+        onSaved?.invoke()
+    }
     fun saveRecovery(sleep: Float, soreness: Int, energy: Int, stress: Int) = viewModelScope.launch {
         if (sleep in 0f..24f && soreness in 1..10 && energy in 1..10 && stress in 1..10) {
             val recommendation = when { sleep < 6 || stress > 7 -> "Rest day"; soreness > 6 -> "Light stretching"; energy > 7 -> "Strength workout"; else -> "Moderate workout" }

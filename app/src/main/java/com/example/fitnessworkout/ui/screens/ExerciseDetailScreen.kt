@@ -23,6 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitnessworkout.R
 import com.example.fitnessworkout.ui.components.ExerciseIllustration
 import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
@@ -41,8 +43,8 @@ fun ExerciseDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(exercise?.name ?: "Exercise guide") },
-                navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                title = { Text(exercise?.name ?: stringResource(R.string.exercise_guide)) },
+                navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             )
         },
     ) { padding ->
@@ -52,33 +54,33 @@ fun ExerciseDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (exercise == null) {
-                item { Text("This exercise guide is unavailable. Return to the workout and choose another exercise.") }
+                item { Text(stringResource(R.string.exercise_unavailable)) }
             } else {
                 item { ExerciseIllustration(exercise, Modifier.height(210.dp)) }
                 item { ExerciseVideoPlayer(exercise, state.isPremiumUser, onPremium) }
                 item {
-                    Text("Exercise details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.exercise_details), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("${exercise.muscleGroup} | ${exercise.difficulty} | ${exercise.equipment}")
                     Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest | ${exercise.caloriesPerMinute} kcal/min")
                 }
                 item {
-                    Text("Step-by-step", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.step_by_step), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     exercise.instruction.split(".").filter { it.isNotBlank() }.forEachIndexed { index, step ->
                         Text("${index + 1}. ${step.trim()}.")
                     }
                 }
                 item {
-                    Text("Safety tips", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.safety_tips), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(exercise.safetyTips)
                 }
                 item {
-                    Text("Common mistakes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_mistakes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(exercise.commonMistakes)
                 }
                 item {
                     Button({ onStart(exercise.planId) }, Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.PlayArrow, null)
-                        Text(" Start exercise")
+                        Text(" ${stringResource(R.string.start_exercise)}")
                     }
                 }
             }

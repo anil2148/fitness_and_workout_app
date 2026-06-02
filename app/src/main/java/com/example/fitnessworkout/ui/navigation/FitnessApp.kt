@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -82,14 +83,16 @@ import com.example.fitnessworkout.ui.screens.GuidedWorkoutPlayerScreen
 import com.example.fitnessworkout.ui.screens.ExerciseDetailScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
-private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+import com.example.fitnessworkout.R
+
+private data class BottomDestination(val route: String, val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val bottomDestinations = listOf(
-    BottomDestination("home", "Home", Icons.Default.Home),
-    BottomDestination("workouts", "Workouts", Icons.Default.FitnessCenter),
-    BottomDestination("challenges", "Challenges", Icons.Default.EmojiEvents),
-    BottomDestination("progress", "Progress", Icons.Default.BarChart),
-    BottomDestination("profile", "Profile", Icons.Default.Person)
+    BottomDestination("home", R.string.nav_home, Icons.Default.Home),
+    BottomDestination("workouts", R.string.nav_workouts, Icons.Default.FitnessCenter),
+    BottomDestination("challenges", R.string.nav_challenges, Icons.Default.EmojiEvents),
+    BottomDestination("progress", R.string.nav_progress, Icons.Default.BarChart),
+    BottomDestination("profile", R.string.nav_profile, Icons.Default.Person)
 )
 
 @Composable
@@ -217,6 +220,7 @@ fun FitnessApp(viewModel: FitnessViewModel) {
 private fun FitnessBottomNavigation(navController: NavHostController, currentRoute: String?) {
     NavigationBar {
         bottomDestinations.forEach { destination ->
+            val label = stringResource(destination.label)
             NavigationBarItem(
                 selected = currentRoute == destination.route,
                 onClick = {
@@ -226,8 +230,8 @@ private fun FitnessBottomNavigation(navController: NavHostController, currentRou
                         restoreState = true
                     }
                 },
-                icon = { Icon(destination.icon, destination.label) },
-                label = { Text(destination.label) }
+                icon = { Icon(destination.icon, label) },
+                label = { Text(label) }
             )
         }
     }
