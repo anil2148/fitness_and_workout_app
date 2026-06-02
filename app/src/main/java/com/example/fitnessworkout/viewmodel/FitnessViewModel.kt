@@ -26,6 +26,9 @@ import com.example.fitnessworkout.data.model.SupportMessage
 import com.example.fitnessworkout.data.model.SkippedWorkout
 import com.example.fitnessworkout.data.model.QuickWorkout
 import com.example.fitnessworkout.data.model.ProgressReport
+import com.example.fitnessworkout.data.model.DailyHabit
+import com.example.fitnessworkout.data.model.FavoriteWorkout
+import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import com.example.fitnessworkout.repository.FitnessRepository
 import com.example.fitnessworkout.utils.LocalFitnessEngine
 import java.time.Instant
@@ -71,14 +74,21 @@ data class FitnessUiState(
     val safetyAcknowledgement: SafetyAcknowledgement = SafetyAcknowledgement(),
     val announcements: List<AppAnnouncement> = emptyList(),
     val supportMessages: List<SupportMessage> = emptyList(),
-    val skippedWorkouts: List<SkippedWorkout> = emptyList()
+    val skippedWorkouts: List<SkippedWorkout> = emptyList(),
+    val dailyHabit: DailyHabit = DailyHabit(LocalDate.now().toString()),
+    val favoriteWorkouts: List<FavoriteWorkout> = emptyList(),
+    val recentlyViewedWorkouts: List<RecentlyViewedWorkout> = emptyList()
 ) {
     val standardPlans get() = plans.filter { it.challengeDay == null }
     val challengePlans get() = plans.filter { it.challengeDay != null }.sortedBy { it.challengeDay }
     val todayWorkout get() = standardPlans.firstOrNull()
     val completedPlanIds get() = history.map { it.planId }.toSet()
-    val recommendation get() = LocalFitnessEngine.recommendation(user, standardPlans, history, skippedWorkouts, settings.workoutLocation, isPremiumUser)
+    val recommendation get() = LocalFitnessEngine.recommendation(user, standardPlans, history, skippedWorkouts, settings.workoutLocation, settings.injurySafeMode, isPremiumUser)
     val fitnessScore get() = LocalFitnessEngine.fitnessScore(history, streak, weeklyCount, fitnessTests, water, measurements)
+    val favoritePlanIds get() = favoriteWorkouts.map { it.planId }.toSet()
+    val recentPlans get() = recentlyViewedWorkouts.mapNotNull { recent -> plans.firstOrNull { it.id == recent.planId } }
+    val weeklyReport get() = LocalFitnessEngine.weeklyReport(history, skippedWorkouts)
+    val monthlyReport get() = LocalFitnessEngine.monthlyReport(history)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -96,7 +106,8 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         repository.customPlans
         , repository.measurements, repository.photos, repository.achievements, repository.fitnessTests, repository.shareSummaries,
         repository.settings, repository.communityPosts, repository.recovery, repository.allExercises,
-        repository.safetyAcknowledgement, repository.announcements, repository.supportMessages, repository.skippedWorkouts
+        repository.safetyAcknowledgement, repository.announcements, repository.supportMessages, repository.skippedWorkouts,
+        repository.dailyHabit, repository.favoriteWorkouts, repository.recentlyViewedWorkouts
     ) { values ->
         val user = values[0] as UserProfile?
         @Suppress("UNCHECKED_CAST") val plans = values[1] as List<WorkoutPlan>
@@ -119,6 +130,9 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         @Suppress("UNCHECKED_CAST") val announcements = values[18] as List<AppAnnouncement>
         @Suppress("UNCHECKED_CAST") val supportMessages = values[19] as List<SupportMessage>
         @Suppress("UNCHECKED_CAST") val skippedWorkouts = values[20] as List<SkippedWorkout>
+        val dailyHabit = values[21] as DailyHabit?
+        @Suppress("UNCHECKED_CAST") val favoriteWorkouts = values[22] as List<FavoriteWorkout>
+        @Suppress("UNCHECKED_CAST") val recentlyViewedWorkouts = values[23] as List<RecentlyViewedWorkout>
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -136,7 +150,9 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             fitnessTests = fitnessTests, shareSummaries = shareSummaries, settings = settings ?: AppSettings(),
             communityPosts = communityPosts, recovery = recovery, allExercises = allExercises,
             safetyAcknowledgement = safetyAcknowledgement ?: SafetyAcknowledgement(), announcements = announcements,
-            supportMessages = supportMessages, skippedWorkouts = skippedWorkouts
+            supportMessages = supportMessages, skippedWorkouts = skippedWorkouts,
+            dailyHabit = dailyHabit ?: DailyHabit(LocalDate.now().toString()), favoriteWorkouts = favoriteWorkouts,
+            recentlyViewedWorkouts = recentlyViewedWorkouts
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FitnessUiState())
 
@@ -154,6 +170,7 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
 
     fun selectPlan(planId: Int) {
         selectedPlanId.value = planId
+        viewModelScope.launch { repository.recordRecentlyViewed(planId) }
     }
 
     fun saveUser(name: String, age: Int, weight: Float, height: Float, goal: String, darkMode: Boolean = uiState.value.user?.darkMode ?: false,
@@ -229,9 +246,13 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             streak = state.streak,
             measurementSummary = state.measurements.firstOrNull()?.let { "${it.weightKg} kg, waist ${it.waistCm} cm" } ?: "No measurements recorded",
             waterSummary = "${state.water.amountMl} / ${state.water.goalMl} ml today",
-            fitnessScore = state.fitnessScore.value
+            fitnessScore = state.fitnessScore.value,
+            challengeProgress = "${state.challengePlans.count { it.id in state.completedPlanIds }} / 30 days",
+            progressPhotoPlaceholder = if (state.photos.isEmpty()) "No progress photo selected" else "${state.photos.size} local progress photo(s)"
         )
     }
+    fun saveDailyHabit(item: DailyHabit) = viewModelScope.launch { repository.saveDailyHabit(item) }
+    fun toggleFavorite(planId: Int) = viewModelScope.launch { repository.toggleFavorite(planId, planId in uiState.value.favoritePlanIds) }
 
     private fun isCurrentWeek(timestamp: Long): Boolean {
         val date = timestamp.toDate()

@@ -76,6 +76,7 @@ import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
+import com.example.fitnessworkout.data.model.PremiumComparisonFeature
 import com.example.fitnessworkout.ui.components.AdBannerPlaceholder
 import com.example.fitnessworkout.ui.components.ChallengeProgress
 import com.example.fitnessworkout.ui.components.SectionTitle
@@ -92,7 +93,9 @@ private val goals = listOf("Lose Weight", "Build Muscle", "Stay Fit", "Improve S
 @Composable
 fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
-    LaunchedEffect(state.user) { if (state.user != null) onFinished() }
+    LaunchedEffect(state.user, state.safetyAcknowledgement) {
+        if (state.user != null && state.safetyAcknowledgement.medicalDisclaimerAccepted) onFinished()
+    }
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
@@ -107,6 +110,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
     var unitSystem by remember { mutableStateOf("Imperial") }
     var diet by remember { mutableStateOf("Balanced") }
     var location by remember { mutableStateOf("Home") }
+    var injurySafeMode by remember { mutableStateOf(false) }
     var acceptedDisclaimer by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -138,6 +142,12 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
         item { OnboardingChoices("Workout location", listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping"), location) { location = it } }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(injurySafeMode, { injurySafeMode = it })
+                Text("Prefer beginner-paced, injury-safe recommendations")
+            }
+        }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(acceptedDisclaimer, { acceptedDisclaimer = it })
                 Text("I understand this app provides general wellness guidance, not medical advice. I will consult a healthcare professional for pregnancy, injury, or medical concerns.")
             }
@@ -146,7 +156,7 @@ fun OnboardingScreen(viewModel: FitnessViewModel, onFinished: () -> Unit) {
             Button(
                 onClick = {
                     viewModel.saveUser(name.trim(), age.toInt(), weight.toFloat(), height.toFloat(), selectedGoal, level = level, minutes = minutes, equipment = equipment, style = style)
-                    viewModel.saveSettings(AppSettings(country = country, language = language, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location))
+                    viewModel.saveSettings(AppSettings(country = country, language = language, unitSystem = unitSystem, dietPreference = diet, workoutLocation = location, injurySafeMode = injurySafeMode))
                     viewModel.acknowledgeSafety()
                 },
                 enabled = acceptedDisclaimer && name.isNotBlank() && age.toIntOrNull() != null && weight.toFloatOrNull() != null && height.toFloatOrNull() != null,
@@ -223,6 +233,20 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
             }
         }
         item {
+            Card(onClick = { onNavigate("daily-habits") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Today's habits: ${state.dailyHabit.completionPercentage}%", fontWeight = FontWeight.Bold)
+                    LinearProgressIndicator({ state.dailyHabit.completionPercentage / 100f }, Modifier.fillMaxWidth())
+                }
+            }
+        }
+        state.recentPlans.firstOrNull()?.let { recent ->
+            item {
+                SectionTitle("Continue last workout")
+                WorkoutPlanCard(recent, onClick = { onPlan(recent.id) })
+            }
+        }
+        item {
             SectionTitle("Today's workout", "A simple session to keep your momentum.")
         }
         state.todayWorkout?.let { plan ->
@@ -237,7 +261,7 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 QuickButton("Progress", Modifier.weight(1f)) { onNavigate("progress") }
-                QuickButton("Profile", Modifier.weight(1f)) { onNavigate("profile") }
+                QuickButton("Reports", Modifier.weight(1f)) { onNavigate("fitness-reports") }
             }
         }
         if (!state.isPremiumUser) item { AdBannerPlaceholder() }
@@ -261,13 +285,14 @@ private fun QuickButton(label: String, modifier: Modifier, onClick: () -> Unit) 
 }
 
 @Composable
-fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: (Int) -> Unit, onPremium: () -> Unit) {
+fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: (Int) -> Unit, onPremium: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedLevel by remember { mutableStateOf("Beginner") }
     Column(Modifier.fillMaxSize().padding(padding)) {
         Column(Modifier.padding(18.dp)) {
             SectionTitle("Workout plans", "Pick a routine that meets you where you are.")
+            OutlinedButton({ onNavigate("favorites") }, Modifier.fillMaxWidth()) { Text("Favorite workouts") }
         }
         TabRow(selectedTabIndex = selectedTab) {
             Tab(selectedTab == 0, { selectedTab = 0 }, text = { Text("Plans") })
@@ -275,6 +300,10 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
         }
         if (selectedTab == 0) {
             LazyColumn(contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (state.recentPlans.isNotEmpty()) {
+                    item { Text("Recently viewed", fontWeight = FontWeight.Bold) }
+                    items(state.recentPlans.take(3), key = { "recent-${it.id}" }) { WorkoutPlanCard(it, { onPlan(it.id) }) }
+                }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Beginner", "Intermediate", "Advanced").forEach {
@@ -305,6 +334,7 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
 fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinished: () -> Unit = onBack) {
     val plan by viewModel.selectedPlan.collectAsState()
     val exercises by viewModel.selectedExercises.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val completed = remember(plan?.id) { mutableStateListOf<Int>() }
     var activeTimerExercise by remember { mutableStateOf<Int?>(null) }
     var remainingSeconds by remember { mutableIntStateOf(0) }
@@ -335,6 +365,12 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
                     Text(it.description)
                     Spacer(Modifier.height(6.dp))
                     Text("${it.durationMinutes} min | ${it.estimatedCalories} kcal", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                item {
+                    OutlinedButton({ viewModel.toggleFavorite(it.id) }, Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Star, null)
+                        Text(if (it.id in state.favoritePlanIds) " Remove from favorites" else " Add to favorites")
+                    }
                 }
             }
             itemsIndexed(exercises, key = { _, item -> item.id }) { index, exercise ->
@@ -370,7 +406,7 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onFinis
     if (showStopWarning) AlertDialog(
         onDismissRequest = { showStopWarning = false },
         title = { Text("Stop this workout?") },
-        text = { Text("Stop immediately if you feel pain, dizziness, unusual shortness of breath, or discomfort. Ending now will record a skipped workout so future recommendations can adapt.") },
+        text = { Text("Stop immediately if you feel pain, dizziness, chest pain, unusual shortness of breath, or severe discomfort. Ending now will record a skipped workout so future recommendations can adapt.") },
         confirmButton = { TextButton({ viewModel.skipSelectedWorkout(); showStopWarning = false; onBack() }) { Text("End workout") } },
         dismissButton = { TextButton({ showStopWarning = false }) { Text("Continue safely") } }
     )
@@ -407,7 +443,7 @@ private fun ExerciseCard(
 }
 
 @Composable
-fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit) {
+fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp),
@@ -428,6 +464,12 @@ fun ProgressScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremiu
             }
         }
         item { SectionTitle("Recent workouts") }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickButton("Reports", Modifier.weight(1f)) { onNavigate("fitness-reports") }
+                QuickButton("PDF preview", Modifier.weight(1f)) { onNavigate("progress-report") }
+            }
+        }
         item {
             if (state.isPremiumUser) {
                 Text("Advanced analytics: consistency ${(state.weeklyCount / 7f * 100).toInt()}% • average ${state.history.map { it.durationMinutes }.average().takeIf { !it.isNaN() }?.toInt() ?: 0} min", fontWeight = FontWeight.Bold)
@@ -487,7 +529,9 @@ fun ProfileScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPremium
                 "ai-progress" to "AI-ready progress analysis", "ai-chat" to "AI-ready motivation chat", "progress-report" to "PDF report preview",
                 "safety" to "Safety and trust", "about" to "About app", "contact-support" to "Contact support",
                 "rate-app" to "Rate app", "share-app" to "Share app", "data-safety" to "Data safety",
-                "announcements" to "Announcements", "content-categories" to "Workout and diet categories").forEach { (route, label) ->
+                "announcements" to "Announcements", "content-categories" to "Workout and diet categories",
+                "daily-habits" to "Daily habit checklist", "fitness-reports" to "Weekly and monthly reports",
+                "favorites" to "Favorite workouts").forEach { (route, label) ->
                 OutlinedButton({ onNavigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
             }
         }
@@ -563,35 +607,52 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
+fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
     Scaffold(topBar = {
         TopAppBar(title = { Text("Fitness Premium") }, navigationIcon = {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
         })
     }) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp))
-            Text("Unlock your next level", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-            Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("$2.99\nMonthly", "$19.99\nYearly\nBest Value", "$29.99\nLifetime").forEach { Text(it, Modifier.weight(1f).background(FitnessGreen.copy(alpha = .16f)).padding(10.dp), fontWeight = FontWeight.Bold) }
-            }
-            listOf("No ads", "30-day fat loss and muscle gain challenges", "Custom workout plans", "Advanced progress analytics", "Diet and meal guidance", "Water intake tracker", "BMI and calorie calculator", "Exercise videos and visual guides", "Offline workout downloads placeholder", "Daily reminders placeholder").forEach {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
-                    Text(it, fontWeight = FontWeight.Bold)
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            item { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp)) }
+            item { Text("Unlock your next level", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold) }
+            item { Text("7-day free trial • Cancel anytime", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            item { Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.") }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("$2.99\nMonthly", "$19.99\nYearly\nSave 44%", "$29.99\nLifetime\nLimited offer").forEach {
+                        Text(it, Modifier.weight(1f).background(FitnessGreen.copy(alpha = .16f)).padding(10.dp), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
-            // TODO: Replace the local toggle with Google Play Billing purchase verification.
-            Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Start Free Trial") }
-            OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) "Disable mock premium" else "Unlock Premium") }
+            item { Text("Free vs Premium", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            items(premiumComparison) { feature -> Text("${feature.title}: ${feature.freeValue} | ${feature.premiumValue}") }
+            item { Text("Testimonial placeholder: “The short workout options help me stay consistent.”") }
+            item { Text("FAQ: Premium unlocks AI-ready previews, reports, advanced analytics, and unlimited tracking. Billing remains a placeholder until Play Billing is connected.") }
+            item {
+                // TODO: Replace the local toggle with Google Play Billing purchase verification.
+                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Start 7-day free trial") }
+            }
+            item { OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) "Disable mock premium" else "Unlock Premium") } }
+            item { OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Restore purchase placeholder") } }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton({ onNavigate("terms") }) { Text("Terms") }
+                    TextButton({ onNavigate("privacy") }) { Text("Privacy") }
+                }
+            }
         }
     }
 }
+
+private val premiumComparison = listOf(
+    PremiumComparisonFeature("Progress tracking", "Limited", "Unlimited history"),
+    PremiumComparisonFeature("Workout plans", "Beginner plans", "Full custom plan builder"),
+    PremiumComparisonFeature("Analytics", "Basic score", "Reports and AI-ready analysis"),
+    PremiumComparisonFeature("Progress photos", "2 local photos", "Unlimited local photos"),
+    PremiumComparisonFeature("Ads", "Placeholder visible", "No ads")
+)
 
 @Composable
 private fun ExerciseVisual(exercise: Exercise) {

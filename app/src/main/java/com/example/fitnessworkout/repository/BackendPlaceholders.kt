@@ -19,4 +19,10 @@ interface BackendPlaceholders {
 
     // TODO: Register push notification tokens and schedule user-approved messages.
     fun registerPushNotifications()
+
+    // TODO: Add optional Health Connect reads and writes after permission UX is approved.
+    fun connectHealthConnect()
+
+    // TODO: Add a Wear OS companion module for workout controls and lightweight tracking.
+    fun connectWearOs()
 }

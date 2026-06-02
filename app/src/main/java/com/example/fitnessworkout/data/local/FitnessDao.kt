@@ -26,6 +26,9 @@ import com.example.fitnessworkout.data.model.SafetyAcknowledgement
 import com.example.fitnessworkout.data.model.AppAnnouncement
 import com.example.fitnessworkout.data.model.SupportMessage
 import com.example.fitnessworkout.data.model.SkippedWorkout
+import com.example.fitnessworkout.data.model.DailyHabit
+import com.example.fitnessworkout.data.model.FavoriteWorkout
+import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -154,6 +157,17 @@ interface FitnessDao {
     @Query("DELETE FROM safety_acknowledgements") suspend fun deleteSafetyAcknowledgements()
     @Query("DELETE FROM support_messages") suspend fun deleteSupportMessages()
     @Query("DELETE FROM skipped_workouts") suspend fun deleteSkippedWorkouts()
+    @Query("SELECT * FROM daily_habits WHERE date = :date") fun observeDailyHabit(date: String): Flow<DailyHabit?>
+    @Query("SELECT * FROM daily_habits WHERE date = :date") suspend fun getDailyHabit(date: String): DailyHabit?
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertDailyHabit(item: DailyHabit)
+    @Query("SELECT * FROM favorite_workouts ORDER BY savedAt DESC") fun observeFavoriteWorkouts(): Flow<List<FavoriteWorkout>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertFavoriteWorkout(item: FavoriteWorkout)
+    @Query("DELETE FROM favorite_workouts WHERE planId = :planId") suspend fun deleteFavoriteWorkout(planId: Int)
+    @Query("SELECT * FROM recently_viewed_workouts ORDER BY viewedAt DESC LIMIT 8") fun observeRecentlyViewedWorkouts(): Flow<List<RecentlyViewedWorkout>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertRecentlyViewedWorkout(item: RecentlyViewedWorkout)
+    @Query("DELETE FROM daily_habits") suspend fun deleteDailyHabits()
+    @Query("DELETE FROM favorite_workouts") suspend fun deleteFavoriteWorkouts()
+    @Query("DELETE FROM recently_viewed_workouts") suspend fun deleteRecentlyViewedWorkouts()
 
     @Query("SELECT COUNT(*) FROM workout_plans")
     suspend fun planCount(): Int

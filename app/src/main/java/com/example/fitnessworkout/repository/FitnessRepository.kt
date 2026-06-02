@@ -24,6 +24,9 @@ import com.example.fitnessworkout.data.model.AppAnnouncement
 import com.example.fitnessworkout.data.model.SupportMessage
 import com.example.fitnessworkout.data.model.SkippedWorkout
 import com.example.fitnessworkout.data.model.QuickWorkout
+import com.example.fitnessworkout.data.model.DailyHabit
+import com.example.fitnessworkout.data.model.FavoriteWorkout
+import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import java.time.LocalDate
 
 class FitnessRepository(private val dao: FitnessDao) {
@@ -48,6 +51,9 @@ class FitnessRepository(private val dao: FitnessDao) {
     val announcements = dao.observeAnnouncements()
     val supportMessages = dao.observeSupportMessages()
     val skippedWorkouts = dao.observeSkippedWorkouts()
+    val dailyHabit = dao.observeDailyHabit(LocalDate.now().toString())
+    val favoriteWorkouts = dao.observeFavoriteWorkouts()
+    val recentlyViewedWorkouts = dao.observeRecentlyViewedWorkouts()
 
     fun exercises(planId: Int) = dao.observeExercises(planId)
 
@@ -62,7 +68,8 @@ class FitnessRepository(private val dao: FitnessDao) {
         if (dao.announcementCount() == 0) dao.insertAnnouncements(listOf(
             AppAnnouncement(title = "New challenge", message = "Try the 30-day beginner consistency challenge.", type = "challenge"),
             AppAnnouncement(title = "Featured workout", message = "Quick office-friendly movement breaks are now available.", type = "featured"),
-            AppAnnouncement(title = "Premium preview", message = "Explore local AI-ready coaching tools and progress reports.", type = "promo")
+            AppAnnouncement(title = "Premium preview", message = "Explore local AI-ready coaching tools and progress reports.", type = "promo"),
+            AppAnnouncement(title = "Maintenance notice", message = "Local tracking remains available during future service maintenance.", type = "maintenance")
         ))
     }
 
@@ -77,6 +84,7 @@ class FitnessRepository(private val dao: FitnessDao) {
             durationMinutes = plan.durationMinutes
         ))
         dao.insertShareSummary(ShareableWorkoutSummary(workoutTitle = plan.title, caloriesBurned = plan.estimatedCalories, durationMinutes = plan.durationMinutes, streak = streak + 1))
+        markWorkoutHabitComplete()
         dao.insertAchievement(Achievement("first_workout", "First Step", "Completed your first workout"))
         if (streak + 1 >= 7) dao.insertAchievement(Achievement("seven_day_streak", "Week Warrior", "Maintained a 7-day workout streak"))
     }
@@ -91,14 +99,21 @@ class FitnessRepository(private val dao: FitnessDao) {
             durationMinutes = workout.durationMinutes
         ))
         dao.insertShareSummary(ShareableWorkoutSummary(workoutTitle = title, caloriesBurned = workout.estimatedCalories, durationMinutes = workout.durationMinutes, streak = streak + 1))
+        markWorkoutHabitComplete()
         dao.insertAchievement(Achievement("quick_start", "Quick Win", "Completed a quick workout"))
     }
 
     suspend fun resetProgress() = dao.resetProgress()
 
     suspend fun setPremium(enabled: Boolean) = dao.upsertPremium(PremiumStatus(isPremiumUser = enabled))
-    suspend fun addWater(amountMl: Int, current: WaterLog?) =
-        dao.upsertWater((current ?: WaterLog(LocalDate.now().toString())).copy(amountMl = (current?.amountMl ?: 0) + amountMl))
+    suspend fun addWater(amountMl: Int, current: WaterLog?) {
+        val log = (current ?: WaterLog(LocalDate.now().toString())).copy(amountMl = (current?.amountMl ?: 0) + amountMl)
+        dao.upsertWater(log)
+        if (log.amountMl >= log.goalMl) {
+            val habit = dao.getDailyHabit(log.date) ?: DailyHabit(log.date)
+            dao.upsertDailyHabit(habit.copy(waterGoalCompleted = true))
+        }
+    }
     suspend fun resetWater(current: WaterLog?) =
         dao.upsertWater((current ?: WaterLog(LocalDate.now().toString())).copy(amountMl = 0))
     suspend fun saveHealthMetric(metric: HealthMetric) = dao.upsertHealthMetric(metric)
@@ -117,11 +132,22 @@ class FitnessRepository(private val dao: FitnessDao) {
         dao.deleteWaterLogs(); dao.deleteHealthMetrics(); dao.deleteReminderSettings(); dao.deleteCustomPlans()
         dao.deletePremiumStatus()
         dao.deleteSettings(); dao.deleteRecovery(); dao.deleteSafetyAcknowledgements()
-        dao.deleteSupportMessages(); dao.deleteSkippedWorkouts()
+        dao.deleteSupportMessages(); dao.deleteSkippedWorkouts(); dao.deleteDailyHabits()
+        dao.deleteFavoriteWorkouts(); dao.deleteRecentlyViewedWorkouts()
     }
     suspend fun saveSettings(item: AppSettings) = dao.upsertSettings(item)
     suspend fun saveRecovery(item: RecoveryLog) = dao.insertRecovery(item)
     suspend fun acknowledgeSafety() = dao.upsertSafetyAcknowledgement(SafetyAcknowledgement(medicalDisclaimerAccepted = true, acceptedAt = System.currentTimeMillis()))
     suspend fun sendSupportMessage(email: String, message: String) = dao.insertSupportMessage(SupportMessage(email = email, message = message))
     suspend fun skipWorkout(plan: WorkoutPlan) = dao.insertSkippedWorkout(SkippedWorkout(planId = plan.id, planTitle = plan.title))
+    suspend fun saveDailyHabit(item: DailyHabit) = dao.upsertDailyHabit(item)
+    suspend fun toggleFavorite(planId: Int, favorite: Boolean) =
+        if (favorite) dao.deleteFavoriteWorkout(planId) else dao.upsertFavoriteWorkout(FavoriteWorkout(planId))
+    suspend fun recordRecentlyViewed(planId: Int) = dao.upsertRecentlyViewedWorkout(RecentlyViewedWorkout(planId))
+
+    private suspend fun markWorkoutHabitComplete() {
+        val today = LocalDate.now().toString()
+        val habit = dao.getDailyHabit(today) ?: DailyHabit(today)
+        dao.upsertDailyHabit(habit.copy(workoutCompleted = true))
+    }
 }

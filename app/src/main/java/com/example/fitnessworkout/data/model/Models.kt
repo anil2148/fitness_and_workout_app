@@ -180,6 +180,7 @@ data class AppSettings(
     val unitSystem: String = "Metric",
     val dietPreference: String = "Balanced",
     val workoutLocation: String = "Home",
+    val injurySafeMode: Boolean = false,
     val analyticsConsent: Boolean = false,
     val cloudSyncConsent: Boolean = false
 )
@@ -222,6 +223,27 @@ data class SkippedWorkout(
     val skippedAt: Long = System.currentTimeMillis()
 )
 
+@Entity(tableName = "daily_habits")
+data class DailyHabit(
+    @PrimaryKey val date: String,
+    val workoutCompleted: Boolean = false,
+    val waterGoalCompleted: Boolean = false,
+    val stepsCompleted: Boolean = false,
+    val mealPlanFollowed: Boolean = false,
+    val sleepLogged: Boolean = false,
+    val stretchingCompleted: Boolean = false
+) {
+    val completionPercentage: Int get() = listOf(
+        workoutCompleted, waterGoalCompleted, stepsCompleted, mealPlanFollowed, sleepLogged, stretchingCompleted
+    ).count { it } * 100 / 6
+}
+
+@Entity(tableName = "favorite_workouts")
+data class FavoriteWorkout(@PrimaryKey val planId: Int, val savedAt: Long = System.currentTimeMillis())
+
+@Entity(tableName = "recently_viewed_workouts")
+data class RecentlyViewedWorkout(@PrimaryKey val planId: Int, val viewedAt: Long = System.currentTimeMillis())
+
 data class QuickWorkout(
     val durationMinutes: Int,
     val filters: Set<String>,
@@ -238,7 +260,9 @@ data class WorkoutRecommendation(
 data class FitnessScore(
     val value: Int,
     val explanation: String,
-    val tips: List<String>
+    val tips: List<String>,
+    val levelLabel: String,
+    val weeklyComparison: String
 )
 
 data class AIChatMessage(val role: String, val text: String)
@@ -251,7 +275,34 @@ data class ProgressReport(
     val streak: Int,
     val measurementSummary: String,
     val waterSummary: String,
-    val fitnessScore: Int
+    val fitnessScore: Int,
+    val challengeProgress: String,
+    val progressPhotoPlaceholder: String
+)
+
+data class WeeklyReport(
+    val workoutsCompleted: Int,
+    val missedWorkouts: Int,
+    val caloriesBurned: Int,
+    val bestWorkoutWeek: String,
+    val improvementPlan: String
+)
+
+data class MonthlyReport(
+    val workoutsCompleted: Int,
+    val caloriesBurned: Int,
+    val transformationSummary: String,
+    val improvementPlan: String
+)
+
+data class PremiumComparisonFeature(val title: String, val freeValue: String, val premiumValue: String)
+
+data class WorkoutContentCategory(
+    val title: String,
+    val description: String,
+    val beginnerFriendly: Boolean,
+    val premiumOnly: Boolean,
+    val relatedPlans: List<String>
 )
 
 data class PricingDisplay(val currency: String, val monthly: String, val yearly: String, val lifetime: String)

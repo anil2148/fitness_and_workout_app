@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.fitnessworkout.data.model.QuickWorkout
+import com.example.fitnessworkout.data.model.WorkoutContentCategory
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
 
@@ -66,7 +68,7 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit) {
     LaunchPage("Quick workout", back) {
         Text("Choose a short session. The local engine selects movements from your exercise library.")
         ChipRow(listOf(5, 10, 15).map { "$it min" }, "$minutes min") { minutes = it.substringBefore(" ").toInt() }
-        listOf("No equipment", "Low impact", "No jumping", "Office friendly").forEach { label ->
+        listOf("No equipment", "Low impact", "No jumping", "Office friendly", "Beginner safe").forEach { label ->
             FilterChip(selected = label in filters, onClick = { filters = if (label in filters) filters - label else filters + label }, label = { Text(label) })
         }
         Button({ workout = vm.quickWorkout(minutes, filters) }, Modifier.fillMaxWidth()) { Text("Generate quick workout") }
@@ -83,7 +85,10 @@ fun FitnessScoreScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState()
     val score = state.fitnessScore
     LaunchPage("Fitness score", back) {
+        CircularProgressIndicator(progress = { score.value / 100f })
         Text("${score.value} / 100", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+        Text(score.levelLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(score.weeklyComparison)
         Text(score.explanation)
         Text("Ways to improve", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         score.tips.forEach { Text("• $it") }
@@ -119,7 +124,7 @@ private fun AIPreview(vm: FitnessViewModel, title: String, response: String, bac
 }
 
 @Composable
-fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
+fun ProgressReportPreviewScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
     val report = vm.progressReport()
     LaunchPage("Progress report preview", back) {
@@ -136,7 +141,9 @@ fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> 
             Text("Measurements: ${report.measurementSummary}")
             Text("Water: ${report.waterSummary}")
             Text("Fitness score: ${report.fitnessScore} / 100")
-            OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Generate PDF placeholder") }
+            Text("Challenge progress: ${report.challengeProgress}")
+            Text("Progress photo: ${report.progressPhotoPlaceholder}")
+            OutlinedButton({}, Modifier.fillMaxWidth()) { Text("Export PDF placeholder") }
             // TODO: Export this preview with Android PdfDocument.
         }
     }
@@ -145,7 +152,7 @@ fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> 
 @Composable fun WarmUpScreen(start: () -> Unit, back: () -> Unit) = LaunchPage("Warm-up first", back) {
     Text("Prepare your body before starting.", fontWeight = FontWeight.Bold)
     listOf("March in place • 60 sec", "Arm circles • 30 sec", "Hip hinges • 45 sec", "Gentle mobility • 60 sec").forEach { Text("• $it") }
-    Text("Stop if you feel pain, dizziness, or unusual discomfort.", color = MaterialTheme.colorScheme.error)
+    Text("Stop if you feel pain, dizziness, chest pain, or severe discomfort.", color = MaterialTheme.colorScheme.error)
     Button(start, Modifier.fillMaxWidth()) { Text("Start workout") }
 }
 
@@ -157,7 +164,7 @@ fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> 
 
 @Composable fun SafetyScreen(back: () -> Unit) = LaunchPage("Safety and trust", back) {
     Text("Exercise safety tips", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    Text("Warm up first. Use controlled movement. Stop immediately for pain, dizziness, or shortness of breath.")
+    Text("Warm up first. Use controlled movement. Stop immediately for pain, dizziness, chest pain, shortness of breath, or severe discomfort.")
     Text("Pregnancy and injury notice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     Text("Ask a qualified healthcare professional before starting or changing exercise during pregnancy, after an injury, or with a medical condition.")
 }
@@ -167,6 +174,7 @@ fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> 
     Text("Version 1.0 (1)")
     Text("Offline-first fitness tracking with optional future cloud integrations.")
     Text("Privacy policy URL placeholder: https://example.com/privacy")
+    Text("Support email placeholder: support@example.com")
 }
 
 @Composable fun ContactSupportScreen(vm: FitnessViewModel, back: () -> Unit) {
@@ -220,12 +228,21 @@ fun ProgressReportScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> 
     }
 }
 
-@Composable fun ContentCategoriesScreen(back: () -> Unit) = LaunchPage("Workout and diet categories", back) {
-    listOf(
-        "Weight Loss at Home", "No Equipment Workout", "Belly Fat Workout", "Beginner Workout",
-        "Women Fitness", "Men Muscle Gain", "Yoga and Stretching", "Walking Plan", "HIIT Workout",
-        "Office Workout", "Indian Diet Plan", "Vegetarian Weight Loss Plan"
-    ).forEach { Text("• $it") }
+@Composable fun ContentCategoriesScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
+    val state by vm.uiState.collectAsState()
+    LaunchPage("Workout and diet categories", back) {
+        contentCategories.forEach { category ->
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(category.title, fontWeight = FontWeight.Bold)
+                    Text(category.description)
+                    Text(if (category.beginnerFriendly) "Beginner-friendly" else "Build up gradually", color = MaterialTheme.colorScheme.primary)
+                    Text("Related: ${category.relatedPlans.joinToString()}", style = MaterialTheme.typography.bodySmall)
+                    if (category.premiumOnly && !state.isPremiumUser) OutlinedButton(premium) { Text("Unlock with Premium") }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -242,3 +259,18 @@ private fun LaunchPage(title: String, back: () -> Unit, content: @Composable Col
             item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) }
         }
     }
+
+private val contentCategories = listOf(
+    WorkoutContentCategory("Weight Loss at Home", "Simple home sessions that combine consistency and movement.", true, false, listOf("Beginner Full Body", "Beginner Cardio")),
+    WorkoutContentCategory("No Equipment Workout", "Bodyweight workouts for home, travel, or small spaces.", true, false, listOf("Beginner Full Body")),
+    WorkoutContentCategory("Belly Fat Workout", "General core and cardio fitness content. Spot reduction is not guaranteed.", true, false, listOf("Beginner Abs", "Beginner Cardio")),
+    WorkoutContentCategory("Beginner Workout", "Start with approachable full-body routines and rest as needed.", true, false, listOf("Beginner Full Body")),
+    WorkoutContentCategory("Women Fitness", "Balanced strength, mobility, and wellness routines.", true, true, listOf("Intermediate Full Body")),
+    WorkoutContentCategory("Men Muscle Gain", "Progressive strength-oriented workout ideas.", false, true, listOf("Intermediate Chest", "Intermediate Arms")),
+    WorkoutContentCategory("Yoga and Stretching", "Gentle mobility and recovery-friendly movement ideas.", true, false, listOf("Beginner Full Body")),
+    WorkoutContentCategory("Walking Plan", "Use walking as an accessible base for consistency.", true, false, listOf("Beginner Cardio")),
+    WorkoutContentCategory("HIIT Workout", "Higher-intensity intervals for users ready to progress.", false, true, listOf("Advanced Cardio")),
+    WorkoutContentCategory("Office Workout", "Short movement breaks and posture resets for desk days.", true, false, listOf("Beginner Full Body")),
+    WorkoutContentCategory("Indian Diet Plan", "General Indian meal-pattern ideas with balanced portions.", true, true, listOf("Diet guidance")),
+    WorkoutContentCategory("Vegetarian Weight Loss Plan", "General vegetarian meal guidance with protein-rich options.", true, true, listOf("Diet guidance"))
+)

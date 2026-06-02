@@ -28,13 +28,15 @@ import com.example.fitnessworkout.R
         Choice("Unit system", settings.unitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(unitSystem = it) }
         Choice("Diet preference", settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
         Choice("Workout location", settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
+        Toggle("Prefer injury-safe recommendations", settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
         Toggle("Analytics consent placeholder", settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
         Toggle("Cloud sync consent placeholder", settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
         Button({ vm.saveSettings(settings) }, Modifier.fillMaxWidth()) { Text("Save global settings") }
         Text("Premium: ${if (state.isPremiumUser) "Active" else "Free"} • App version 1.0")
         listOf("community" to "Community", "trainer" to "Trainer mode", "form-check" to "AI form check", "specialized" to "Specialized routines",
             "calendar" to "Smart calendar", "recovery" to "Recovery score", "export-data" to "Export my data", "consent" to "Data consent",
-            "whats-new" to "What's new", "bug-report" to "Bug report").forEach { (route, label) ->
+            "whats-new" to "What's new", "bug-report" to "Bug report", "daily-habits" to "Daily habits",
+            "fitness-reports" to "Fitness reports", "favorites" to "Favorite workouts").forEach { (route, label) ->
             OutlinedButton({ navigate(route) }, Modifier.fillMaxWidth()) { Text(label) }
         }
     }

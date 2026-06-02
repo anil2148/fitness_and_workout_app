@@ -38,6 +38,11 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Splash screen, launcher icon placeholder, About, Contact Support, Rate App, Share App, Data Safety, and version-information sections
 - In-app workout and diet category hub for home training, beginner plans, HIIT, yoga, walking, office fitness, and Indian or vegetarian meal guidance
 - Offline app announcements, promo cards, featured workout cards, and new-challenge cards ready for a future Remote Config connection
+- Smart daily habit checklist for workouts, water, steps placeholder, meals, sleep, and stretching with a Home completion percentage
+- Weekly and monthly fitness reports with timeline, missed workout summary, best-week context, and suggested improvements
+- Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
+- Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
+- GitHub Actions debug build that uploads the APK as `fitness-workout-debug-apk`
 
 ## Tech Stack
 
@@ -98,6 +103,22 @@ Install Android SDK 35 and run:
 ```
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Download APK from GitHub Actions
+
+1. Open the repository on GitHub and select the **Actions** tab.
+2. Open a successful **Android Debug APK** workflow run.
+3. Download the `fitness-workout-debug-apk` artifact.
+4. Unzip the artifact to get `app-debug.apk`.
+
+## Install APK on an Android Phone
+
+1. Transfer `app-debug.apk` to the Android phone.
+2. Open the APK from the phone's Files app.
+3. Allow installation from that source if Android asks for permission.
+4. Tap **Install**.
+
+The APK is a debug build for testing. Use a signed release bundle before Play Store submission.
 
 ## Future Integrations
 
