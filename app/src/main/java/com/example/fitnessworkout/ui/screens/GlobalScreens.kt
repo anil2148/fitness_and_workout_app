@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.example.fitnessworkout.data.model.AppSettings
-import com.example.fitnessworkout.data.model.PricingDisplay
+import com.example.fitnessworkout.data.MockPremiumPlans
 import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import androidx.compose.ui.res.stringResource
@@ -60,7 +60,7 @@ import com.example.fitnessworkout.utils.AppLocaleManager
 @Composable fun ConsentScreen(back: () -> Unit) = GlobalPage("Data consent", back) { Text("Analytics and cloud sync are optional placeholders. Offline tracking remains available without consent.") }
 @Composable fun WhatsNewScreen(back: () -> Unit) = GlobalPage("What's new", back) { Text("Global settings, imperial units, localization packs, recovery scoring, specialized routines, community, and trainer placeholders.") }
 @Composable fun BugReportScreen(back: () -> Unit) = ComingSoonScreen("Bug report", "Connect the support form before production launch.", back)
-@Composable fun MonetizationScreen(back: () -> Unit) { val pricing = regionalPricing; GlobalPage("Regional pricing preview", back) { Text("7-day free trial • Limited-time lifetime offer", fontWeight = FontWeight.Bold); pricing.forEach { Text("${it.currency}: ${it.monthly} monthly • ${it.yearly} yearly • ${it.lifetime} lifetime") }; Text("Promo code placeholder • Referral code placeholder"); Text("TODO: Replace display models with Google Play Billing regional offers.") } }
+@Composable fun MonetizationScreen(back: () -> Unit) { val pricing = MockPremiumPlans.regionalPricing; GlobalPage("Regional pricing preview", back) { Text("Mock-only regional display models", fontWeight = FontWeight.Bold); pricing.forEach { Text("${it.currency}: ${it.monthly} monthly • ${it.yearly} yearly • ${it.lifetime} lifetime") }; Text("${MockPremiumPlans.promoCodeText} • ${MockPremiumPlans.referralDiscountText}"); Text("TODO: Replace display models with Google Play Billing ProductDetails and eligible offers.") } }
 
 @Composable private fun PremiumPlaceholder(vm: FitnessViewModel, title: String, text: String, back: () -> Unit, premium: () -> Unit) { val state by vm.uiState.collectAsState(); if (!state.isPremiumUser) GlobalPage(title, back) { Icon(Icons.Default.Lock, null); Text("Premium feature"); Button(premium) { Text("View Premium") } } else ComingSoonScreen(title, text, back) }
 @Composable fun ComingSoonScreen(title: String, description: String, back: () -> Unit, premiumLocked: Boolean = false) = GlobalPage(title, back) { if (premiumLocked) Icon(Icons.Default.Lock, null); Text(stringResource(R.string.coming_soon), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(description) }
@@ -70,4 +70,3 @@ import com.example.fitnessworkout.utils.AppLocaleManager
 @Composable private fun Num(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
 @OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }
 private val countries = listOf("United States", "India", "Spain", "France", "United Arab Emirates", "Brazil", "United Kingdom")
-private val regionalPricing = listOf(PricingDisplay("USD", "$2.99", "$19.99", "$29.99"), PricingDisplay("INR", "₹249", "₹1,699", "₹2,499"), PricingDisplay("EUR", "€2.99", "€19.99", "€29.99"), PricingDisplay("GBP", "£2.49", "£17.99", "£26.99"), PricingDisplay("BRL", "R$14.90", "R$99.90", "R$149.90"))

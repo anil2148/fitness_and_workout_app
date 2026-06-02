@@ -71,9 +71,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.example.fitnessworkout.R
+import com.example.fitnessworkout.data.MockPremiumPlans
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.utils.AppLocaleManager
@@ -81,6 +83,8 @@ import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.UserProfile
 import com.example.fitnessworkout.data.model.WorkoutPlan
 import com.example.fitnessworkout.data.model.PremiumComparisonFeature
+import com.example.fitnessworkout.data.model.SubscriptionPlanUi
+import com.example.fitnessworkout.repository.PremiumPricingRepository
 import com.example.fitnessworkout.ui.components.AdBannerPlaceholder
 import com.example.fitnessworkout.ui.components.ChallengeProgress
 import com.example.fitnessworkout.ui.components.ExerciseIllustration
@@ -697,6 +701,15 @@ private fun EditProfileDialog(user: UserProfile, onDismiss: () -> Unit, onSave: 
 @Composable
 fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
+    val pricingRepository = remember { PremiumPricingRepository() }
+    var subscriptionPlans by remember { mutableStateOf(pricingRepository.getSubscriptionPlans()) }
+    var promotionalPlans by remember { mutableStateOf(pricingRepository.getPromotionalPlans()) }
+    val selectedPlan = (subscriptionPlans + promotionalPlans).firstOrNull { it.isSelected }
+    val selectPlan: (SubscriptionPlanUi) -> Unit = { plan ->
+        pricingRepository.selectPlan(plan.productId, plan.offerId)
+        subscriptionPlans = pricingRepository.getSubscriptionPlans()
+        promotionalPlans = pricingRepository.getPromotionalPlans()
+    }
     Scaffold(topBar = {
         TopAppBar(title = { Text(stringResource(R.string.premium_title)) }, navigationIcon = {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
@@ -705,31 +718,64 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp)) }
             item { Text(stringResource(R.string.unlock_next_level), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold) }
-            item { Text(stringResource(R.string.trial_cancel), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
-            item { Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.") }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("$2.99\nMonthly", "$19.99\nYearly\nSave 44%", "$29.99\nLifetime\nLimited offer").forEach {
-                        Text(it, Modifier.weight(1f).background(FitnessGreen.copy(alpha = .16f)).padding(10.dp), fontWeight = FontWeight.Bold)
-                    }
-                }
+            promotionalPlans.firstOrNull { it.trialText != null }?.trialText?.let { trial ->
+                item { Text("$trial • Cancel anytime", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             }
+            item { Text(if (state.isPremiumUser) "Premium is active on this device." else "Choose a plan and unlock the complete experience.") }
+            item { Text("Premium plans", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            items(subscriptionPlans, key = { "${it.productId}:${it.offerId.orEmpty()}" }) { plan ->
+                SubscriptionPlanCard(plan, onClick = { selectPlan(plan) })
+            }
+            item { Text("Promotional offers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            items(promotionalPlans, key = { "${it.productId}:${it.offerId.orEmpty()}" }) { plan ->
+                SubscriptionPlanCard(plan, onClick = { selectPlan(plan) })
+            }
+            item { Text("${MockPremiumPlans.referralDiscountText} • ${MockPremiumPlans.promoCodeText}", style = MaterialTheme.typography.bodySmall) }
             item { Text(stringResource(R.string.free_vs_premium), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             items(premiumComparison) { feature -> Text("${feature.title}: ${feature.freeValue} | ${feature.premiumValue}") }
             item { Text("Testimonial placeholder: “The short workout options help me stay consistent.”") }
             item { Text("FAQ: Premium unlocks AI-ready previews, reports, advanced analytics, and unlimited tracking. Billing remains a placeholder until Play Billing is connected.") }
             item {
                 // TODO: Replace the local toggle with Google Play Billing purchase verification.
-                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.start_trial)) }
+                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth()) { Text("Enable ${selectedPlan?.title ?: "Premium"} (mock)") }
             }
             item { OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) stringResource(R.string.disable_mock_premium) else stringResource(R.string.unlock_premium)) } }
             item { OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text(stringResource(R.string.restore_purchase)) } }
+            item { Text("Mock testing only. No payment is collected and no real purchase is created.", style = MaterialTheme.typography.bodySmall) }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton({ onNavigate("terms") }) { Text(stringResource(R.string.terms)) }
                     TextButton({ onNavigate("privacy") }) { Text(stringResource(R.string.privacy)) }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionPlanCard(plan: SubscriptionPlanUi, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (plan.isSelected) FitnessGreen.copy(alpha = .2f) else MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(plan.title, fontWeight = FontWeight.Bold)
+                plan.offerBadge?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            }
+            Text(plan.description, style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                plan.originalPriceText?.let { Text(it, textDecoration = TextDecoration.LineThrough, style = MaterialTheme.typography.bodySmall) }
+                Text(plan.priceText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                Text(plan.billingPeriodText)
+            }
+            plan.discountText?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            plan.trialText?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+            if (plan.isLifetime) Text("Lifetime purchase", style = MaterialTheme.typography.bodySmall)
+            if (plan.isSelected) Text("Selected", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -42,6 +42,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Weekly and monthly fitness reports with timeline, missed workout summary, best-week context, and suggested improvements
 - Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
 - Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
+- Flexible mock Premium pricing catalog for monthly, yearly, lifetime, intro, trial, seasonal, referral, and promo-code previews without hardcoded Compose prices
 - GitHub Actions debug build that uploads the APK as `fitness-workout-debug-apk`
 - Guided offline workout player with start, pause, resume, next, skip, rest countdown, finish, progress, and safe-exit controls
 - Returning-user splash routing that waits for local profile state and opens Home directly after onboarding is complete
@@ -101,6 +102,7 @@ Workout plans are inserted into the local Room database the first time the app l
 - Supported units: metric and imperial
 - Add translations in `app/src/main/res/values-<locale>/strings.xml`
 - Regional prices are display models only. Replace them with Google Play Billing product details before release.
+- Premium pricing is mock-only until Google Play Billing is integrated. Preview values live in `MockPremiumPlans.kt`; see `docs/MONETIZATION.md`.
 
 ## Privacy and Legal
 
