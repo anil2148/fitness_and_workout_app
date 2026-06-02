@@ -46,6 +46,9 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Guided offline workout player with start, pause, resume, next, skip, rest countdown, finish, progress, and safe-exit controls
 - Returning-user splash routing that waits for local profile state and opens Home directly after onboarding is complete
 - Workout search and level filters with safe empty-result handling
+- App-owned vector illustrations for core exercises with a safe fallback drawable when media is unavailable
+- Offline-safe Premium video guide placeholders with thumbnails, play controls, preview text, and no required MP4 files
+- Exercise guide screen with large illustration, video placeholder, training details, safety tips, mistakes, and start action
 - Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
 - Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
 
@@ -138,6 +141,14 @@ The APK is a debug build for testing. Use a signed release bundle before Play St
 ## Working Placeholders
 
 The app remains offline-first. Google Play Billing, AdMob, external AI APIs, real exercise videos, PDF export, Firebase login, cloud backup, push notifications, Health Connect, Wear OS, and ML pose detection are intentionally shown as stable Coming Soon placeholders.
+
+## Exercise Media
+
+Exercise illustrations are app-owned vector drawables stored in `app/src/main/res/drawable` using names such as `exercise_push_ups.xml`, `exercise_squats.xml`, and `exercise_plank.xml`. `exercise_placeholder.xml` is the guaranteed fallback for missing artwork.
+
+The video guide UI is intentionally offline-safe and does not require MP4 files. Licensed local prototypes can later add files under `app/src/main/res/raw` using names such as `video_push_ups.mp4`, `video_squats.mp4`, and `video_plank.mp4`. For production, prefer a CDN or Firebase Storage instead of bundling a large video catalog into the APK.
+
+Only use app-owned, licensed, or confirmed royalty-free photos, illustrations, and videos. Do not add random internet media. See `docs/media/README.md` for the media checklist.
 
 ## Known Limitations
 

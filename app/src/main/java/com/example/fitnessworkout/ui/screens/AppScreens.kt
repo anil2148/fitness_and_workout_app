@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,7 +70,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.painterResource
 import com.example.fitnessworkout.R
 import com.example.fitnessworkout.data.model.AppSettings
 import com.example.fitnessworkout.utils.Units
@@ -81,8 +79,11 @@ import com.example.fitnessworkout.data.model.WorkoutPlan
 import com.example.fitnessworkout.data.model.PremiumComparisonFeature
 import com.example.fitnessworkout.ui.components.AdBannerPlaceholder
 import com.example.fitnessworkout.ui.components.ChallengeProgress
+import com.example.fitnessworkout.ui.components.ExerciseIllustration
+import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
 import com.example.fitnessworkout.ui.components.SectionTitle
 import com.example.fitnessworkout.ui.components.StatCard
+import com.example.fitnessworkout.ui.components.WorkoutPlanIllustration
 import com.example.fitnessworkout.ui.components.WorkoutPlanCard
 import com.example.fitnessworkout.ui.theme.FitnessBlack
 import com.example.fitnessworkout.ui.theme.FitnessGreen
@@ -219,9 +220,12 @@ fun HomeScreen(viewModel: FitnessViewModel, padding: PaddingValues, onNavigate: 
         state.recommendation?.let { recommendation ->
             item {
                 Card(onClick = { onPlan(recommendation.planId) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                    Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(recommendation.title, fontWeight = FontWeight.Bold)
-                        Text(recommendation.reason, style = MaterialTheme.typography.bodySmall)
+                    Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        state.plans.firstOrNull { it.id == recommendation.planId }?.let { WorkoutPlanIllustration(it, Modifier.size(72.dp)) }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(recommendation.title, fontWeight = FontWeight.Bold)
+                            Text(recommendation.reason, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
@@ -344,7 +348,14 @@ fun WorkoutsScreen(viewModel: FitnessViewModel, padding: PaddingValues, onPlan: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onStartPlayer: () -> Unit, onFinished: () -> Unit = onBack) {
+fun WorkoutDetailScreen(
+    viewModel: FitnessViewModel,
+    onBack: () -> Unit,
+    onStartPlayer: () -> Unit,
+    onExercise: (Int) -> Unit,
+    onPremium: () -> Unit,
+    onFinished: () -> Unit = onBack,
+) {
     val plan by viewModel.selectedPlan.collectAsState()
     val exercises by viewModel.selectedExercises.collectAsState()
     val state by viewModel.uiState.collectAsState()
@@ -398,6 +409,9 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onStart
                     exercise = exercise,
                     isComplete = exercise.id in completed,
                     timerText = if (activeTimerExercise == exercise.id) "$remainingSeconds sec" else null,
+                    isPremiumUser = state.isPremiumUser,
+                    onPremium = onPremium,
+                    onDetails = { onExercise(exercise.id) },
                     onTimer = {
                         activeTimerExercise = exercise.id
                         remainingSeconds = exercise.durationSeconds ?: 0
@@ -433,7 +447,15 @@ fun WorkoutDetailScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onStart
 
 @Composable
 private fun ExerciseCard(
-    index: Int, exercise: Exercise, isComplete: Boolean, timerText: String?, onTimer: () -> Unit, onComplete: () -> Unit
+    index: Int,
+    exercise: Exercise,
+    isComplete: Boolean,
+    timerText: String?,
+    isPremiumUser: Boolean,
+    onPremium: () -> Unit,
+    onDetails: () -> Unit,
+    onTimer: () -> Unit,
+    onComplete: () -> Unit,
 ) {
     val scale by animateFloatAsState(if (isComplete) 1.02f else 1f, tween(250), label = "exercise")
     Card(
@@ -447,8 +469,8 @@ private fun ExerciseCard(
                 Text(exercise.name, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                 IconButton(onClick = onComplete) { Icon(Icons.Default.CheckCircle, "Mark complete", tint = if (isComplete) MaterialTheme.colorScheme.primary else Color.Gray) }
             }
-            ExerciseVisual(exercise)
-            ExerciseVideoPlayer(exercise)
+            ExerciseIllustration(exercise, Modifier.height(144.dp))
+            ExerciseVideoPlayer(exercise, isPremiumUser, onPremium)
             Text("${exercise.muscleGroup} | ${exercise.difficulty} | ${exercise.equipment}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
             Text("${exercise.sets} sets | ${exercise.repsOrDuration} | ${exercise.restSeconds}s rest | ${exercise.caloriesPerMinute} kcal/min", style = MaterialTheme.typography.bodySmall)
             Text(exercise.instruction, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -457,6 +479,7 @@ private fun ExerciseCard(
             if (exercise.durationSeconds != null) {
                 OutlinedButton(onClick = onTimer) { Text(timerText ?: "Start timer") }
             }
+            TextButton(onClick = onDetails) { Text("Open exercise guide") }
         }
     }
 }
@@ -672,22 +695,3 @@ private val premiumComparison = listOf(
     PremiumComparisonFeature("Progress photos", "2 local photos", "Unlimited local photos"),
     PremiumComparisonFeature("Ads", "Placeholder visible", "No ads")
 )
-
-@Composable
-private fun ExerciseVisual(exercise: Exercise) {
-    Box(Modifier.fillMaxWidth().height(96.dp).clip(RoundedCornerShape(14.dp)).background(FitnessGreen.copy(alpha = .12f)), contentAlignment = Alignment.Center) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Image(painterResource(R.drawable.exercise_placeholder), contentDescription = "${exercise.name} fallback visual", Modifier.size(72.dp))
-            Text("${exercise.name} • ${exercise.muscleGroup}")
-        }
-    }
-}
-
-@Composable
-private fun ExerciseVideoPlayer(exercise: Exercise) {
-    // TODO: Replace this offline-safe placeholder with packaged MP4 files or Media3 playback.
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FitnessBlack).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.PlayArrow, null, tint = FitnessGreen)
-        Text(" Video placeholder • Coming soon", color = Color.White, style = MaterialTheme.typography.bodySmall)
-    }
-}

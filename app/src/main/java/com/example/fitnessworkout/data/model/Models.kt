@@ -248,7 +248,8 @@ data class QuickWorkout(
     val durationMinutes: Int,
     val filters: Set<String>,
     val exerciseNames: List<String>,
-    val estimatedCalories: Int
+    val estimatedCalories: Int,
+    val exercises: List<Exercise> = emptyList(),
 )
 
 data class WorkoutRecommendation(

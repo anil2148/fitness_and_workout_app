@@ -6,10 +6,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -36,14 +37,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.fitnessworkout.data.model.Exercise
+import com.example.fitnessworkout.ui.components.ExerciseIllustration
+import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: () -> Unit) {
+fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium: () -> Unit, finished: () -> Unit) {
     val plan by vm.selectedPlan.collectAsState()
     val exercises by vm.selectedExercises.collectAsState()
+    val state by vm.uiState.collectAsState()
     var index by remember(plan?.id) { mutableIntStateOf(0) }
     var remainingSeconds by remember(plan?.id) { mutableIntStateOf(0) }
     var running by remember(plan?.id) { mutableStateOf(false) }
@@ -86,7 +90,8 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: 
             } else {
                 Text("Exercise ${index + 1} of ${exercises.size}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 LinearProgressIndicator({ (index + 1) / exercises.size.toFloat() }, Modifier.fillMaxWidth())
-                Icon(Icons.Default.FitnessCenter, null)
+                ExerciseIllustration(exercise, Modifier.fillMaxWidth().height(190.dp))
+                ExerciseVideoPlayer(exercise, state.isPremiumUser, onPremium)
                 Text(if (resting) "Rest" else exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
                 if (resting) {
                     Text("Breathe, hydrate if needed, and prepare for the next exercise.")
@@ -123,6 +128,13 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, finished: 
                     vm.completeSelectedWorkout()
                     finished()
                 }, Modifier.fillMaxWidth()) { Text("Finish workout") }
+                exercises.getOrNull(index + 1)?.let { next ->
+                    Text("Next exercise", fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ExerciseIllustration(next, Modifier.size(width = 92.dp, height = 58.dp))
+                        Text(next.name)
+                    }
+                }
             }
         }
     }

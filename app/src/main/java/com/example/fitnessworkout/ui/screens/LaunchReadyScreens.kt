@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.fitnessworkout.data.model.QuickWorkout
 import com.example.fitnessworkout.data.model.WorkoutContentCategory
+import com.example.fitnessworkout.ui.components.ExerciseIllustration
+import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
 
@@ -66,7 +69,7 @@ fun SplashScreen(isLoading: Boolean, finished: () -> Unit) {
 }
 
 @Composable
-fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit) {
+fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
     var minutes by remember { mutableIntStateOf(5) }
     var filters by remember { mutableStateOf(setOf("No equipment")) }
@@ -80,7 +83,15 @@ fun QuickWorkoutScreen(vm: FitnessViewModel, back: () -> Unit) {
         Button({ workout = vm.quickWorkout(minutes, filters) }, Modifier.fillMaxWidth()) { Text("Generate quick workout") }
         workout?.let { generated ->
             Text("${generated.durationMinutes} minutes | ${generated.estimatedCalories} kcal", fontWeight = FontWeight.Bold)
-            generated.exerciseNames.forEach { Text("• $it") }
+            generated.exercises.forEach { exercise ->
+                Card(Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ExerciseIllustration(exercise, Modifier.size(width = 96.dp, height = 62.dp))
+                        Text(exercise.name, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            generated.exercises.firstOrNull()?.let { ExerciseVideoPlayer(it, state.isPremiumUser, premium) }
             Button({ vm.completeQuickWorkout(generated); back() }, Modifier.fillMaxWidth()) { Text("Complete quick workout") }
         }
     }

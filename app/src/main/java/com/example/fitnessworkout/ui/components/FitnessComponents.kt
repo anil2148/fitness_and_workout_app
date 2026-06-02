@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,7 +55,7 @@ fun WorkoutPlanCard(plan: WorkoutPlan, onClick: () -> Unit, modifier: Modifier =
                 modifier = Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(FitnessGreen.copy(alpha = .18f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary)
+                WorkoutPlanIllustration(plan, Modifier.size(52.dp))
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(plan.title, fontWeight = FontWeight.Bold)

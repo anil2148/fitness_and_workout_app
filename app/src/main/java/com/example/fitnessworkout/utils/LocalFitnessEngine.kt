@@ -34,7 +34,8 @@ object LocalFitnessEngine {
             durationMinutes = minutes,
             filters = filters,
             exerciseNames = selected.map { it.name },
-            estimatedCalories = selected.sumOf { it.caloriesPerMinute } * minutes / selected.size.coerceAtLeast(1)
+            estimatedCalories = selected.sumOf { it.caloriesPerMinute } * minutes / selected.size.coerceAtLeast(1),
+            exercises = selected,
         )
     }
 

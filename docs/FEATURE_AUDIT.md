@@ -12,10 +12,10 @@ This audit documents the stabilized offline-first Android app. Statuses describe
 | 4 | Home dashboard | Working | Stats, recommendation, score, habit progress, recent workout, and quick actions render from state. |
 | 5 | Bottom navigation | Working | Home, Workouts, Challenges, Progress, and Profile routes are registered and selected correctly. |
 | 6 | Workouts list | Fixed | Search, level filters, empty results, and Free or Premium plan cards route safely through warm-up. |
-| 7 | Workout detail | Fixed | Exercise list, fallback visual, safety text, favorite action, manual completion, and guided-player entry work. |
-| 8 | Workout player | Fixed | Guided player supports start, pause, resume, next, skip, rest countdowns, finish, progress, and safe exit. |
-| 9 | Exercise visuals | Fixed | All exercises display the packaged `exercise_placeholder.xml` fallback. |
-| 10 | Exercise video placeholder | Hidden as Coming Soon | Stable video placeholder; no Media3 dependency or missing file lookup. |
+| 7 | Workout detail | Fixed | Exercise list, app-owned illustrations, Premium-safe video placeholders, guide links, safety text, favorite action, manual completion, and guided-player entry work. |
+| 8 | Workout player | Fixed | Guided player supports current and next exercise illustrations, video placeholder, start, pause, resume, next, skip, rest countdowns, finish, progress, and safe exit. |
+| 9 | Exercise visuals | Fixed | Core exercises use distinct app-owned vector illustrations with a guaranteed `exercise_placeholder.xml` fallback. |
+| 10 | Exercise video placeholder | Hidden as Coming Soon | Premium-safe video card uses thumbnails, accessibility labels, and nullable local-video lookup without requiring MP4 files. |
 | 11 | Completed workout saving | Working | Guided, manual, and quick workout completion save to Room. |
 | 12 | Progress screen | Working | Totals, timeline, reports, PDF preview, and Premium analytics link are safe. |
 | 13 | Streak calculation | Fixed | Extracted pure logic with JVM regression test. |
@@ -70,6 +70,7 @@ The following integrations intentionally remain offline-safe Coming Soon placeho
 | Home dashboard | Working | Cards, quick actions, recommendations, fitness score, and habits read from state. | Manual code-path check |
 | Workout search and filter | Fixed | Case-insensitive search, level chips, and empty results are safe. | Manual code-path check; `./gradlew assembleDebug` |
 | Workout player | Fixed | Start, pause, resume, next, skip, rest countdown, finish, and safe exit are available. | Manual code-path check; `./gradlew assembleDebug` |
+| Exercise media | Fixed | App-owned vectors, fallback lookup, video placeholders, player thumbnails, and exercise guide routing work offline. | `./gradlew testDebugUnitTest`; `./gradlew clean assembleDebug` |
 | Completed-workout persistence | Working | Guided, detail, and quick-workout flows save through the Room repository. | Manual code-path check |
 | Progress and streak | Working | Dashboard and reports consume persisted history; streak math has regression coverage. | `./gradlew testDebugUnitTest` |
 | Health calculators | Fixed | BMI, BMR, calorie needs, and water intake use extracted validated calculations. | `./gradlew testDebugUnitTest` |

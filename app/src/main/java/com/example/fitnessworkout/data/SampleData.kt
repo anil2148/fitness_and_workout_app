@@ -3,6 +3,7 @@ package com.example.fitnessworkout.data
 import com.example.fitnessworkout.data.model.Exercise
 import com.example.fitnessworkout.data.model.WorkoutPlan
 import com.example.fitnessworkout.data.model.WorkoutPlanWithExercises
+import com.example.fitnessworkout.utils.ExerciseMedia
 
 object SampleData {
     val quotes = listOf(
@@ -36,14 +37,14 @@ object SampleData {
         val reps = "${10 + intensity * 4} reps"
         val exercises = when (category) {
             "Chest" -> listOf("Push-Ups", "Incline Push-Ups", "Chest Press", "Plank Shoulder Taps")
-            "Legs" -> listOf("Squats", "Reverse Lunges", "Glute Bridges", "Wall Sit")
-            "Arms" -> listOf("Tricep Dips", "Bicep Curls", "Arm Circles", "Diamond Push-Ups")
-            "Abs" -> listOf("Crunches", "Bicycle Crunches", "Leg Raises", "Plank")
+            "Legs" -> listOf("Squats", "Reverse Lunges", "Glute Bridges", "Wall Sit", "Step Ups", "Calf Raises")
+            "Arms" -> listOf("Tricep Dips", "Bicep Curls", "Arm Circles", "Diamond Push-Ups", "Plank Shoulder Taps")
+            "Abs" -> listOf("Crunches", "Bicycle Crunches", "Leg Raises", "Plank", "Side Plank", "Russian Twists")
             "Cardio" -> listOf("Jumping Jacks", "High Knees", "Mountain Climbers", "Burpees")
-            else -> listOf("Squats", "Push-Ups", "Mountain Climbers", "Plank")
+            else -> listOf("Squats", "Push-Ups", "Mountain Climbers", "Plank", "Superman")
         }
         return exercises.mapIndexed { index, name ->
-            val timed = name in listOf("Plank", "Wall Sit", "Jumping Jacks", "High Knees", "Mountain Climbers", "Arm Circles")
+            val timed = name in listOf("Plank", "Side Plank", "Wall Sit", "Jumping Jacks", "High Knees", "Mountain Climbers", "Arm Circles")
             Exercise(
                 planId = 0,
                 name = name,
@@ -56,8 +57,8 @@ object SampleData {
                 muscleGroup = category,
                 difficulty = if (intensity == 1) "Beginner" else if (intensity == 2) "Intermediate" else "Advanced",
                 equipment = if (name in listOf("Chest Press", "Bicep Curls", "Step Ups")) "Optional dumbbells" else "No equipment",
-                imageResName = imageName(name),
-                localVideoName = "video_${imageName(name).removePrefix("exercise_")}",
+                imageResName = ExerciseMedia.imageResourceName(name),
+                localVideoName = ExerciseMedia.videoResourceName(name),
                 caloriesPerMinute = 5 + intensity,
                 safetyTips = "Warm up first. Keep your form steady and stop if you feel pain.",
                 commonMistakes = "Avoid rushing, holding your breath, or losing alignment.",
@@ -93,7 +94,4 @@ object SampleData {
         "Reverse Lunges" -> "Step back softly and keep the front knee aligned."
         else -> "Move with control, breathe steadily, and maintain good form."
     }
-
-    private fun imageName(name: String) = "exercise_" + name.lowercase()
-        .replace("-", "").replace(" ", "_")
 }

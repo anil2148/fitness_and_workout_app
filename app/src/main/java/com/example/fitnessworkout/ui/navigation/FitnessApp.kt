@@ -79,6 +79,7 @@ import com.example.fitnessworkout.ui.screens.DailyHabitScreen
 import com.example.fitnessworkout.ui.screens.FitnessReportsScreen
 import com.example.fitnessworkout.ui.screens.FavoriteWorkoutsScreen
 import com.example.fitnessworkout.ui.screens.GuidedWorkoutPlayerScreen
+import com.example.fitnessworkout.ui.screens.ExerciseDetailScreen
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 
 private data class BottomDestination(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
@@ -130,6 +131,10 @@ fun FitnessApp(viewModel: FitnessViewModel) {
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
                 WorkoutDetailScreen(viewModel, onBack = { navController.popBackStack() }, onStartPlayer = {
                     navController.navigate("player/$planId")
+                }, onExercise = { exerciseId ->
+                    navController.navigate("exercise/$exerciseId")
+                }, onPremium = {
+                    navController.navigate("premium")
                 }, onFinished = {
                     navController.navigate("cooldown") { popUpTo("workouts") }
                 })
@@ -137,9 +142,20 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("player/{planId}") { entry ->
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
                 LaunchedEffect(planId) { planId?.let(viewModel::selectPlan) }
-                GuidedWorkoutPlayerScreen(viewModel, back = { navController.popBackStack() }, finished = {
+                GuidedWorkoutPlayerScreen(viewModel, back = { navController.popBackStack() }, onPremium = {
+                    navController.navigate("premium")
+                }, finished = {
                     navController.navigate("cooldown") { popUpTo("workouts") }
                 })
+            }
+            composable("exercise/{exerciseId}") { entry ->
+                ExerciseDetailScreen(
+                    vm = viewModel,
+                    exerciseId = entry.arguments?.getString("exerciseId")?.toIntOrNull(),
+                    back = { navController.popBackStack() },
+                    onPremium = { navController.navigate("premium") },
+                    onStart = { planId -> navController.navigate("player/$planId") },
+                )
             }
             composable("warmup/{planId}") { entry ->
                 val planId = entry.arguments?.getString("planId")?.toIntOrNull()
@@ -175,7 +191,7 @@ fun FitnessApp(viewModel: FitnessViewModel) {
             composable("whats-new") { WhatsNewScreen { navController.popBackStack() } }
             composable("bug-report") { BugReportScreen { navController.popBackStack() } }
             composable("regional-pricing") { MonetizationScreen { navController.popBackStack() } }
-            composable("quick-workout") { QuickWorkoutScreen(viewModel) { navController.popBackStack() } }
+            composable("quick-workout") { QuickWorkoutScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
             composable("fitness-score") { FitnessScoreScreen(viewModel) { navController.popBackStack() } }
             composable("ai-workout") { AIWorkoutCoachScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
             composable("ai-meal") { AIMealSuggestionScreen(viewModel, { navController.popBackStack() }, { navController.navigate("premium") }) }
