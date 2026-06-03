@@ -4,6 +4,8 @@
 
 Premium access remains a local mock for QA. The app does not connect to Google Play Billing, collect payment, create a purchase, or verify an entitlement. The mock unlock only stores a local Room flag so locked-screen behavior can be tested offline.
 
+All Premium-gated features are also available locally for the first 30 days after onboarding. This first-month free entitlement is calculated from the persisted onboarding safety-acknowledgement timestamp and does not create a purchase, payment, subscription, or verified Play Billing entitlement.
+
 Compose screens do not own price strings. `MockPremiumPlans.kt` is the developer-only preview catalog, `SubscriptionPlanUi` is the display model, and `PremiumPricingRepository` is the replacement boundary for Google Play Billing.
 
 ## Mock Catalog
@@ -61,6 +63,7 @@ Google Play Console should remain the source of truth for final prices. Do not h
 ## Offer Strategy
 
 - Free trial: use `yearly-free-trial-7-days` for eligible new subscribers.
+- First month free: current app builds grant local access for the first 30 days after onboarding. When production billing is connected, replace or reconcile this local entitlement with Play Billing eligibility rules.
 - Intro offer: use `monthly-intro-099` for a first-month conversion test.
 - Seasonal discounts: manage `yearly-50-off` and `new-year-offer` in Play Console and show only eligible offers returned by Play.
 - Promo codes and referrals: connect them to Play-supported promotions or a verified backend campaign before granting entitlement.

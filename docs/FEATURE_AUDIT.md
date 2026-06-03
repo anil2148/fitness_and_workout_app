@@ -16,7 +16,7 @@ This audit records the stabilized offline-first MVP. Automated checks and source
 | Guided workout player | Fixed | Safe exercise indexing, current and next illustration, video placeholder, timer, rest, pause, resume, next, skip, finish, and stop warning | Made player content scrollable on small screens | Missing exercise data displays a safe loading message. |
 | Completed workout persistence | Working | Repository save paths for detail, guided player, and quick workouts | No additional change required | Saves history, share summary, habit progress, and achievements locally. |
 | Exercise media fallback | Working | Drawable resource lookup, missing-name fallback, vector resources, accessibility descriptions, and nullable local-video lookup | No additional change required | Real MP4 files are optional and absent by design. |
-| Premium mock unlock and pricing | Fixed | Room-backed Premium status, selectable repository-backed pricing cards, exact numeric regional mock amounts, localized currency formatting, promotional cards, lock routing, ad placeholder hiding, and disabled restore placeholder | Corrected GBP, BRL, AED, and SAR preview values; retained a Billing-ready repository boundary | Real Google Play Billing remains Coming Soon. |
+| Premium mock unlock and pricing | Fixed | Room-backed Premium status, first-month free entitlement, selectable repository-backed pricing cards, exact numeric regional mock amounts, localized currency formatting, promotional cards, lock routing, ad placeholder hiding, and disabled restore placeholder | Added 30-day local Premium access after onboarding and retained a Billing-ready repository boundary | Real Google Play Billing remains Coming Soon. |
 | Premium localized display | Fixed | Plan titles, descriptions, billing periods, discounts, badges, trial copy, selected state, and mock unlock message | Mock catalog now carries display tokens while `PremiumScreen` renders localized resources | Google Play Billing `ProductDetails` will replace mock pricing later. |
 | Promo code, referral code, and affiliate store | Fixed | Premium-screen buttons, route registrations, back behavior, and placeholder copy | Added reachable Coming Soon pages | No redemption, tracking, or external store integration is connected. |
 | Challenges | Fixed | List route, lock behavior, detail routing through warm-up, and empty-data behavior | Added explicit loading empty state | Advanced challenge logic remains local. |
@@ -79,6 +79,16 @@ Incomplete integrations route to stable placeholder pages or disabled actions. T
 | Currency fallback | Working | Unsupported codes fall back to `USD`; JVM test passes. |
 | Regional Premium pricing | Working | `PremiumPricingRepository` reads numeric mock regional amounts and the UI formats them with `CurrencyFormatter`. |
 | Invalid direct unit mapping | Working | Unknown country values fall back to Metric units; JVM test passes. |
+
+## First-Month Free Premium Audit
+
+| Scenario | Result | Evidence |
+|---|---|---|
+| New user completes onboarding | Working | Safety acknowledgement persists `acceptedAt`; effective Premium access is true for the first 30 days. |
+| Premium-gated screens during first month | Working | Existing locks read `isPremiumUser`, now computed from mock unlock or active first-month entitlement. |
+| First-month expiry | Working | `PremiumTrial` returns inactive at day 30; JVM boundary test covers day 29 and day 30. |
+| Mock Premium unlock | Working | Manual mock unlock remains separate as `isMockPremiumUser` and continues to grant access after the first month. |
+| Billing safety | Working | No payment, subscription, purchase, or Google Play Billing entitlement is created by the first-month free window. |
 
 ## Automated Verification
 

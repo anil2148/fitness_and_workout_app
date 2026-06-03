@@ -32,6 +32,7 @@ import com.example.fitnessworkout.data.model.RecentlyViewedWorkout
 import com.example.fitnessworkout.repository.FitnessRepository
 import com.example.fitnessworkout.utils.LocalFitnessEngine
 import com.example.fitnessworkout.utils.FitnessCalculations
+import com.example.fitnessworkout.utils.PremiumTrial
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -58,6 +59,9 @@ data class FitnessUiState(
     val quote: String = SampleData.quotes.first()
     ,
     val isPremiumUser: Boolean = false,
+    val isMockPremiumUser: Boolean = false,
+    val isFirstMonthFreeActive: Boolean = false,
+    val premiumTrialDaysRemaining: Int = 0,
     val water: WaterLog = WaterLog(LocalDate.now().toString()),
     val healthMetric: HealthMetric? = null,
     val reminders: ReminderSettings = ReminderSettings(),
@@ -134,6 +138,10 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
         val dailyHabit = values[21] as DailyHabit?
         @Suppress("UNCHECKED_CAST") val favoriteWorkouts = values[22] as List<FavoriteWorkout>
         @Suppress("UNCHECKED_CAST") val recentlyViewedWorkouts = values[23] as List<RecentlyViewedWorkout>
+        val trialStartedAt = safetyAcknowledgement?.acceptedAt ?: 0L
+        val now = System.currentTimeMillis()
+        val isMockPremiumUser = premium?.isPremiumUser ?: false
+        val isFirstMonthFreeActive = PremiumTrial.isActive(trialStartedAt, now)
         FitnessUiState(
             isLoading = false,
             user = user,
@@ -143,7 +151,10 @@ class FitnessViewModel(private val repository: FitnessRepository) : ViewModel() 
             weeklyCount = history.count { isCurrentWeek(it.completedAt) },
             streak = FitnessCalculations.streak(history.map { it.completedAt }),
             quote = SampleData.quotes[LocalDate.now().dayOfYear % SampleData.quotes.size],
-            isPremiumUser = premium?.isPremiumUser ?: false,
+            isPremiumUser = isMockPremiumUser || isFirstMonthFreeActive,
+            isMockPremiumUser = isMockPremiumUser,
+            isFirstMonthFreeActive = isFirstMonthFreeActive && !isMockPremiumUser,
+            premiumTrialDaysRemaining = PremiumTrial.daysRemaining(trialStartedAt, now),
             water = water ?: WaterLog(LocalDate.now().toString()),
             healthMetric = healthMetric,
             reminders = reminders ?: ReminderSettings(),

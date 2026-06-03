@@ -762,10 +762,34 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(54.dp)) }
             item { Text(stringResource(R.string.unlock_next_level), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold) }
+            if (state.isFirstMonthFreeActive) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(stringResource(R.string.first_month_free_active), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.first_month_free_days_remaining, state.premiumTrialDaysRemaining), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.first_month_free_body), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
             promotionalPlans.firstOrNull { it.trialText != null }?.trialText?.let { trial ->
                 item { Text(stringResource(R.string.trial_cancel_value, premiumText(trial)), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             }
-            item { Text(stringResource(if (state.isPremiumUser) R.string.premium_active else R.string.choose_plan)) }
+            item {
+                Text(
+                    stringResource(
+                        when {
+                            state.isFirstMonthFreeActive -> R.string.first_month_free_status
+                            state.isPremiumUser -> R.string.premium_active
+                            else -> R.string.choose_plan
+                        }
+                    )
+                )
+            }
             item { Text(stringResource(R.string.premium_plans), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
             items(subscriptionPlans, key = { "${it.productId}:${it.offerId.orEmpty()}" }) { plan ->
                 SubscriptionPlanCard(plan, state.settings.selectedLanguageCode, onClick = { selectPlan(plan) })
@@ -795,7 +819,11 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
                     Text(stringResource(R.string.enable_mock_plan, selectedPlan?.let { premiumTitle(it) } ?: stringResource(R.string.premium_title)))
                 }
             }
-            item { OutlinedButton(onClick = { viewModel.setPremium(!state.isPremiumUser) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.isPremiumUser) stringResource(R.string.disable_mock_premium) else stringResource(R.string.unlock_premium)) } }
+            item {
+                OutlinedButton(onClick = { viewModel.setPremium(!state.isMockPremiumUser) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (state.isMockPremiumUser) stringResource(R.string.disable_mock_premium) else stringResource(R.string.unlock_premium))
+                }
+            }
             item { OutlinedButton({}, Modifier.fillMaxWidth(), enabled = false) { Text(stringResource(R.string.restore_purchase)) } }
             item { Text(stringResource(R.string.mock_purchase_notice), style = MaterialTheme.typography.bodySmall) }
             item {

@@ -43,6 +43,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Weekly and monthly fitness reports with timeline, missed workout summary, best-week context, and suggested improvements
 - Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
 - Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
+- First-month free access after onboarding so all Premium-gated features are available locally for the first 30 days
 - Flexible mock Premium pricing catalog for monthly, yearly, lifetime, intro, trial, seasonal, referral, and promo-code previews without hardcoded Compose prices
 - Localized Premium plan display using string resources for plan names, descriptions, billing periods, badges, discounts, and trial text
 - Local action feedback for Settings changes, Premium unlock, workout controls, water, measurements, reminders, feedback, share launch, and destructive confirmations
@@ -108,7 +109,7 @@ Workout plans are inserted into the local Room database the first time the app l
 - Supported countries: United States, India, United Kingdom, Canada, Australia, Germany, France, Spain, Brazil, United Arab Emirates, and Saudi Arabia
 - Add translations in `app/src/main/res/values-<locale>/strings.xml`
 - Regional prices are display models only. Replace them with Google Play Billing product details before release.
-- Premium pricing is mock-only until Google Play Billing is integrated. Preview values live in `MockPremiumPlans.kt`; see `docs/MONETIZATION.md`.
+- Premium pricing and entitlement are mock/local until Google Play Billing is integrated. The first 30 days after onboarding unlock all Premium-gated features locally; preview prices live in `MockPremiumPlans.kt`; see `docs/MONETIZATION.md`.
 
 ## Privacy and Legal
 
@@ -175,7 +176,8 @@ Use only owned, licensed, royalty-free, or AI-generated media that you have righ
 ## Manual MVP Checks
 
 - Language switching: open Profile, choose **Global settings**, change English to Hindi, confirm the UI refreshes, restart the app, then repeat with English and Arabic.
-- Premium mock unlock: open **Explore Premium**, tap **Unlock Premium**, return to a locked feature, and confirm local Premium access remains active after an app restart.
+- First-month free Premium: complete onboarding, open a normally Premium feature such as AI previews or unlimited tracking, and confirm access is available without payment.
+- Premium mock unlock: after the first-month window or for QA, open **Explore Premium**, tap **Unlock Premium**, return to a locked feature, and confirm local Premium access remains active after an app restart.
 - Full phone checklist: follow `docs/MANUAL_QA_CHECKLIST.md` after installing the debug APK.
 
 ## Known Limitations
