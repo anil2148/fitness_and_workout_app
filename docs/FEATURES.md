@@ -10,7 +10,9 @@ This document is for future developers working on the `fitness_and_workout_app` 
 - Likely direct Compose literals are reported by `scripts/scan_hardcoded_strings.py`.
 - Language, country, currency, and units are stored separately so Hindi with USD and English with INR remain valid combinations.
 - Premium preview prices are numeric regional values formatted at runtime, never final release prices.
+- Premium catalog data uses non-visible tokens for display labels; Compose renders localized string resources.
 - Promo Code, Referral Code, and Affiliate Store entries route to stable Coming Soon pages until verified integrations exist.
+- Key user actions show localized snackbar feedback, visible validation errors, confirmation dialogs, or safe placeholder navigation.
 
 ---
 

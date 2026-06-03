@@ -27,6 +27,21 @@ Use this checklist after installing `app/build/outputs/apk/debug/app-debug.apk` 
 - [ ] Legal: Privacy Policy, Terms, Medical Disclaimer, Data Consent, Delete My Data, Export My Data, and Data Safety.
 - [ ] Confirm every unavailable integration shows Coming Soon copy or a disabled placeholder and every top-bar back button returns safely.
 
+## Action Feedback
+
+- [ ] Save onboarding profile and confirm Home opens after a valid save.
+- [ ] Save Settings and confirm a success message appears.
+- [ ] Change language, country, currency, and unit system; confirm localized feedback appears.
+- [ ] Start a workout and confirm the flow advances safely.
+- [ ] Pause and resume the workout player and confirm feedback appears.
+- [ ] Finish a workout and confirm progress is saved.
+- [ ] Unlock Premium with the mock button and confirm success feedback appears.
+- [ ] Add water and confirm progress plus success feedback.
+- [ ] Save a measurement and confirm history plus success feedback.
+- [ ] Submit feedback and confirm success feedback.
+- [ ] Reset/delete data only after a confirmation dialog.
+- [ ] Open a Coming Soon feature and confirm it has a friendly title, description, and back button.
+
 ## Workout Flow
 
 - [ ] Open Workouts and select a plan.

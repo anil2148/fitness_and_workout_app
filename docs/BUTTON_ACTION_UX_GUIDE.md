@@ -4,8 +4,6 @@ This guide defines how every button, clickable card, form action, dialog action,
 
 Use this document when fixing or reviewing screens.
 
----
-
 ## 1. Global Action Rules
 
 Every visible action must provide clear feedback.
@@ -20,7 +18,7 @@ Every visible action must provide clear feedback.
 
 ### After successful action
 
-- Show a clear success message with Snackbar or Toast.
+- Show a clear success message with Snackbar, Toast, or persistent success text.
 - Update the UI immediately.
 - Navigate only after the action succeeds.
 - Clear transient form state only after successful save.
@@ -43,8 +41,6 @@ Always show a confirmation dialog before:
 - Delete progress photo
 - Clear water logs
 - Clear completed workouts
-
----
 
 ## 2. Standard Success Messages
 
@@ -71,8 +67,6 @@ Use string resources for these messages:
 - `copied_to_clipboard`
 - `share_sheet_opened`
 
----
-
 ## 3. Standard Error Messages
 
 Use string resources for these messages:
@@ -97,8 +91,6 @@ Use string resources for these messages:
 - `permission_required`
 - `action_cancelled`
 
----
-
 ## 4. Confirmation Dialog Messages
 
 Use string resources for these messages:
@@ -112,15 +104,30 @@ Use string resources for these messages:
 - `confirm_logout_title`
 - `confirm_logout_message`
 
----
+## 5. Current Covered Actions
 
-## 5. Post-Action Navigation Rules
+| Screen | Action | Feedback |
+|---|---|---|
+| Settings | Language, country, currency, unit changes | Localized snackbar or restart toast; settings remain independent |
+| Settings | Save global settings | Localized snackbar and visible saved message |
+| Premium | Mock unlock | Localized snackbar; local Premium flag only |
+| Workout Detail | Start / finish workout | Localized snackbar and safe navigation |
+| Workout Player | Pause / resume / finish | Localized snackbar and existing completion flow |
+| Water Tracker | Add water | Localized snackbar; invalid amount remains a visible error |
+| Body Measurements | Save measurement | Localized snackbar; free-limit and validation errors stay visible |
+| Reminders | Save reminder preferences | Localized snackbar |
+| Feedback | Submit feedback | Localized snackbar and success message |
+| Share Workout | Open share sheet | Localized snackbar when the system share sheet launches |
+| Delete Data / Reset | Destructive action | Confirmation dialog before action |
+| Promo / Referral / Affiliate | Placeholder action | Safe Coming Soon page |
+
+## 6. Post-Action Navigation Rules
 
 ### Onboarding
 
 After saving profile successfully:
 
-1. Show `profile_saved_successfully`.
+1. Show or trigger `profile_saved_successfully` where the UI remains visible long enough.
 2. Navigate to Home.
 3. Clear Onboarding from back stack.
 
@@ -183,13 +190,11 @@ After Calculate:
 
 After confirmation and success:
 
-1. Show `data_deleted_successfully`.
+1. Show `data_deleted_successfully` where the UI remains visible long enough.
 2. If profile was deleted, navigate to Onboarding and clear back stack.
 3. If only progress was reset, stay on Profile/Settings or navigate Home.
 
----
-
-## 6. UI State Pattern
+## 7. UI State Pattern
 
 Screens with actions should have state fields such as:
 
@@ -215,9 +220,7 @@ sealed interface UiEvent {
 
 Avoid showing the same Snackbar repeatedly after recomposition.
 
----
-
-## 7. UI Quality Rules
+## 8. UI Quality Rules
 
 Major screens should use:
 
@@ -232,9 +235,7 @@ Major screens should use:
 - Accessible button labels
 - Content descriptions for icon-only buttons
 
----
-
-## 8. Accessibility Rules
+## 9. Accessibility Rules
 
 - Icon-only buttons must have content descriptions.
 - Images must have meaningful content descriptions.
@@ -242,9 +243,15 @@ Major screens should use:
 - Do not rely only on color for errors/success.
 - Snackbar messages must be meaningful.
 
----
+## 10. Adding New Actions
 
-## 9. Manual QA Checklist for Actions
+1. Add a string key for success, error, or placeholder copy.
+2. Add the key to every locale pack.
+3. Use `SnackbarHostState`, visible error text, `AlertDialog`, or `ComingSoonScreen`.
+4. Run `python3 scripts/verify_strings.py`.
+5. Run `python3 scripts/scan_hardcoded_strings.py`.
+
+## 11. Manual QA Checklist for Actions
 
 Test these actions before release:
 

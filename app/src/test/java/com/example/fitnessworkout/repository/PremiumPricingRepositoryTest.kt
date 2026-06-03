@@ -18,9 +18,9 @@ class PremiumPricingRepositoryTest {
         val offers = PremiumPricingRepository().getPromotionalPlans()
 
         assertTrue(offers.any { it.offerId == "monthly-intro-099" && it.originalPriceAmount != null })
-        assertTrue(offers.any { it.offerId == "yearly-50-off" && it.discountText == "50% off yearly plan" })
-        assertTrue(offers.any { it.offerId == "yearly-free-trial-7-days" && it.trialText == "7 days free" })
-        assertTrue(offers.any { it.offerId == "new-year-offer" && it.offerBadge == "New Year Offer" })
+        assertTrue(offers.any { it.offerId == "yearly-50-off" && it.discountText == "yearly_50_off" })
+        assertTrue(offers.any { it.offerId == "yearly-free-trial-7-days" && it.trialText == "seven_days_free" })
+        assertTrue(offers.any { it.offerId == "new-year-offer" && it.offerBadge == "new_year_offer" })
     }
 
     @Test fun usesRegionalNumericAmountsAndCurrencyCode() {

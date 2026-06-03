@@ -44,6 +44,8 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Favorite workouts, recently viewed sessions, and a continue-last-workout Home card
 - Premium conversion page with a 7-day trial banner, yearly savings, lifetime offer, comparison table, FAQ, testimonial, restore, terms, and privacy placeholders
 - Flexible mock Premium pricing catalog for monthly, yearly, lifetime, intro, trial, seasonal, referral, and promo-code previews without hardcoded Compose prices
+- Localized Premium plan display using string resources for plan names, descriptions, billing periods, badges, discounts, and trial text
+- Local action feedback for Settings changes, Premium unlock, workout controls, water, measurements, reminders, feedback, share launch, and destructive confirmations
 - GitHub Actions debug build that uploads the APK as `fitness-workout-debug-apk`
 - Guided offline workout player with start, pause, resume, next, skip, rest countdown, finish, progress, and safe-exit controls
 - Returning-user splash routing that waits for local profile state and opens Home directly after onboarding is complete
@@ -54,6 +56,7 @@ A modern Android fitness app built with Kotlin and Jetpack Compose. It helps use
 - Validated calculator, water, measurement, fitness-test, recovery, feedback, and support forms
 - Feature-by-feature stabilization audit in `docs/FEATURE_AUDIT.md`
 - Localization and currency audit in `docs/LOCALIZATION_AUDIT.md`
+- Button action UX guide in `docs/BUTTON_ACTION_UX_GUIDE.md`
 - Manual Android-phone regression checklist in `docs/MANUAL_QA_CHECKLIST.md`
 
 ## Tech Stack

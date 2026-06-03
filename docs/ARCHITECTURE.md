@@ -311,6 +311,7 @@ The repository includes:
 - `scripts/verify_app.sh` for string checks, JVM tests, APK assembly, and APK existence.
 - JVM tests for region mapping, currency independence, Premium previews, calculators, conversions, streaks, locks, recommendation rules, validation, locale fallback, and media fallback.
 - Compose test tags for the most important onboarding, navigation, Settings, Premium, and workout actions.
+- `docs/BUTTON_ACTION_UX_GUIDE.md` for success/error feedback, destructive confirmations, and Coming Soon policy.
 
 Instrumented Compose smoke tests remain a future addition because the current MVP does not configure an Android test runner. Manual emulator coverage is tracked in `docs/MANUAL_QA_CHECKLIST.md`.
 - Avoid hardcoded route strings scattered across UI files.

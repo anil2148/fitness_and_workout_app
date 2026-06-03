@@ -21,6 +21,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +44,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.example.fitnessworkout.R
 
@@ -106,8 +110,11 @@ fun AppFeedbackScreen(vm: FitnessViewModel, back: () -> Unit) {
     var message by remember { mutableStateOf("") }
     var saved by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val feedbackError = stringResource(R.string.feedback_error)
-    ExpansionPage(stringResource(R.string.app_feedback), back) {
+    val feedbackSent = stringResource(R.string.feedback_sent_successfully)
+    ExpansionPage(stringResource(R.string.app_feedback), back, snackbarHostState) {
         item { Text(stringResource(R.string.feedback_body)) }
         item { OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.email)) }) }
         item { OutlinedTextField(message, { message = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.feedback)) }) }
@@ -115,10 +122,10 @@ fun AppFeedbackScreen(vm: FitnessViewModel, back: () -> Unit) {
         item {
             Button({
                 if (!email.contains("@") || message.isBlank()) error = feedbackError
-                else { vm.sendSupportMessage(email, message); saved = true; error = null }
+                else { vm.sendSupportMessage(email, message); saved = true; error = null; message = ""; scope.launch { snackbarHostState.showSnackbar(feedbackSent) } }
             }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_feedback)) }
         }
-        if (saved) item { Text(stringResource(R.string.feedback_saved)) }
+        if (saved) item { Text(feedbackSent) }
     }
 }
 
@@ -140,8 +147,8 @@ private fun ReportCard(title: String, content: @Composable ColumnScope.() -> Uni
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun ExpansionPage(title: String, back: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) =
-    Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding ->
+private fun ExpansionPage(title: String, back: () -> Unit, snackbarHostState: SnackbarHostState? = null, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) =
+    Scaffold(snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } }, topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
     }
 

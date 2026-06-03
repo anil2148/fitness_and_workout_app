@@ -23,6 +23,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +49,7 @@ import com.example.fitnessworkout.ui.components.ExerciseIllustration
 import com.example.fitnessworkout.ui.components.ExerciseVideoPlayer
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +62,11 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
     var running by remember(plan?.id) { mutableStateOf(false) }
     var resting by remember(plan?.id) { mutableStateOf(false) }
     var showExitWarning by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val pausedMessage = stringResource(R.string.workout_paused)
+    val resumedMessage = stringResource(R.string.workout_resumed)
+    val completedMessage = stringResource(R.string.workout_completed_successfully)
     val exercise = exercises.getOrNull(index)
 
     LaunchedEffect(exercise?.id) {
@@ -80,7 +89,9 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
         }
     }
 
-    Scaffold(topBar = {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
         TopAppBar(
             title = { Text(plan?.title ?: stringResource(R.string.guided_workout)) },
             navigationIcon = { IconButton({ showExitWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }
@@ -107,7 +118,10 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                 }
                 Text(stringResource(R.string.seconds_value, remainingSeconds), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button({ running = !running }, Modifier.weight(1f)) {
+                    Button({
+                        running = !running
+                        scope.launch { snackbarHostState.showSnackbar(if (running) resumedMessage else pausedMessage) }
+                    }, Modifier.weight(1f)) {
                         Icon(if (running) Icons.Default.Pause else Icons.Default.PlayArrow, null)
                         Text(" " + if (running) stringResource(R.string.pause) else if (remainingSeconds < exercise.playerSeconds()) stringResource(R.string.resume) else stringResource(R.string.start))
                     }
@@ -116,6 +130,7 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                         resting = false
                         if (index < exercises.lastIndex) index++ else {
                             vm.completeSelectedWorkout()
+                            scope.launch { snackbarHostState.showSnackbar(completedMessage) }
                             finished()
                         }
                     }, Modifier.weight(1f)) { Text(if (index < exercises.lastIndex) stringResource(R.string.next) else stringResource(R.string.finish)) }
@@ -125,12 +140,14 @@ fun GuidedWorkoutPlayerScreen(vm: FitnessViewModel, back: () -> Unit, onPremium:
                     resting = false
                     if (index < exercises.lastIndex) index++ else {
                         vm.completeSelectedWorkout()
+                        scope.launch { snackbarHostState.showSnackbar(completedMessage) }
                         finished()
                     }
                 }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.skip_exercise)) }
                 OutlinedButton({
                     running = false
                     vm.completeSelectedWorkout()
+                    scope.launch { snackbarHostState.showSnackbar(completedMessage) }
                     finished()
                 }, Modifier.fillMaxWidth().testTag("workout_finish_button")) { Text(stringResource(R.string.finish_workout)) }
                 exercises.getOrNull(index + 1)?.let { next ->

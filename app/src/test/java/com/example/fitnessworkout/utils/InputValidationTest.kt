@@ -11,5 +11,11 @@ class InputValidationTest {
         assertFalse(InputValidation.isPositiveNumber("invalid"))
         assertFalse(InputValidation.isPositiveNumber("-1"))
         assertTrue(InputValidation.isPositiveNumber("70.5"))
+        assertFalse(InputValidation.isPositiveInt("0"))
+        assertTrue(InputValidation.isPositiveInt("30"))
+        assertFalse(InputValidation.isNonNegativeNumber("-0.1"))
+        assertTrue(InputValidation.isNonNegativeNumber("0"))
+        assertFalse(InputValidation.isValidEmail("alex"))
+        assertTrue(InputValidation.isValidEmail("alex@example.com"))
     }
 }

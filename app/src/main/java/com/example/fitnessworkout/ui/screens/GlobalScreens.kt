@@ -25,11 +25,19 @@ import com.example.fitnessworkout.utils.AppLocaleManager
 import com.example.fitnessworkout.utils.CurrencyFormatter
 import com.example.fitnessworkout.utils.RegionSettings
 import com.example.fitnessworkout.ui.components.localizedOption
+import kotlinx.coroutines.launch
 
 @Composable fun SettingsScreen(vm: FitnessViewModel, back: () -> Unit, navigate: (String) -> Unit) {
     val context = LocalContext.current
     val state by vm.uiState.collectAsState(); var settings by remember(state.settings) { mutableStateOf(state.settings) }; var settingsSaved by remember { mutableStateOf(false) }
-    GlobalPage(stringResource(R.string.settings_title), back) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val languageUpdated = stringResource(R.string.language_updated_successfully)
+    val countryUpdated = stringResource(R.string.country_updated_successfully)
+    val currencyUpdated = stringResource(R.string.currency_updated_successfully)
+    val unitUpdated = stringResource(R.string.unit_system_updated_successfully)
+    val settingsSavedMessage = stringResource(R.string.settings_saved_successfully)
+    GlobalPage(stringResource(R.string.settings_title), back, snackbarHostState) {
         Choice(stringResource(R.string.country_region), settings.country, RegionSettings.supportedCountries.map { it.label }, Modifier.testTag("settings_country_selector")) {
             val selected = RegionSettings.country(it)
             settings = settings.copy(
@@ -39,22 +47,36 @@ import com.example.fitnessworkout.ui.components.localizedOption
                 selectedUnitSystem = selected.unitSystem,
                 unitSystem = selected.unitSystem,
             )
+            scope.launch { snackbarHostState.showSnackbar(countryUpdated) }
         }
         LanguageChoice(settings.selectedLanguageCode) { code ->
             val updated = settings.copy(language = AppLocaleManager.languageName(code), selectedLanguageCode = code)
             settings = updated
-            vm.saveSettings(updated) { AppLocaleManager.restartUi(context) }
+            vm.saveSettings(updated) {
+                scope.launch { snackbarHostState.showSnackbar(languageUpdated) }
+                AppLocaleManager.restartUi(context)
+            }
         }
-        Choice(stringResource(R.string.currency), settings.selectedCurrencyCode, RegionSettings.supportedCurrencyCodes, Modifier.testTag("settings_currency_selector")) { settings = settings.copy(selectedCurrencyCode = RegionSettings.safeCurrencyCode(it)) }
-        Choice(stringResource(R.string.unit_system), settings.selectedUnitSystem, listOf("Metric", "Imperial")) { settings = settings.copy(selectedUnitSystem = it, unitSystem = it) }
+        Choice(stringResource(R.string.currency), settings.selectedCurrencyCode, RegionSettings.supportedCurrencyCodes, Modifier.testTag("settings_currency_selector")) {
+            settings = settings.copy(selectedCurrencyCode = RegionSettings.safeCurrencyCode(it))
+            scope.launch { snackbarHostState.showSnackbar(currencyUpdated) }
+        }
+        Choice(stringResource(R.string.unit_system), settings.selectedUnitSystem, listOf("Metric", "Imperial")) {
+            settings = settings.copy(selectedUnitSystem = it, unitSystem = it)
+            scope.launch { snackbarHostState.showSnackbar(unitUpdated) }
+        }
         Choice(stringResource(R.string.diet_preference), settings.dietPreference, listOf("Balanced", "Vegetarian", "Vegan", "Halal-friendly", "Gluten-free", "Dairy-free", "Keto")) { settings = settings.copy(dietPreference = it) }
         Choice(stringResource(R.string.workout_location), settings.workoutLocation, listOf("Home", "Gym", "Office", "Outdoor", "Apartment / no jumping")) { settings = settings.copy(workoutLocation = it) }
         Toggle(stringResource(R.string.prefer_injury_safe), settings.injurySafeMode) { settings = settings.copy(injurySafeMode = it) }
         Toggle(stringResource(R.string.analytics_consent), settings.analyticsConsent) { settings = settings.copy(analyticsConsent = it) }
         Toggle(stringResource(R.string.cloud_sync_consent), settings.cloudSyncConsent) { settings = settings.copy(cloudSyncConsent = it) }
         Toggle(stringResource(R.string.dark_mode), state.user?.darkMode ?: false, vm::setDarkMode)
-        Button({ vm.saveSettings(settings); settingsSaved = true }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
-        if (settingsSaved) Text(stringResource(R.string.settings_saved), color = MaterialTheme.colorScheme.primary)
+        Button({
+            vm.saveSettings(settings)
+            settingsSaved = true
+            scope.launch { snackbarHostState.showSnackbar(settingsSavedMessage) }
+        }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_global_settings)) }
+        if (settingsSaved) Text(settingsSavedMessage, color = MaterialTheme.colorScheme.primary)
         Text("${if (state.isPremiumUser) stringResource(R.string.premium_member) else stringResource(R.string.free_member)} • ${stringResource(R.string.app_version)}")
         listOf("community" to R.string.community, "trainer" to R.string.trainer_mode, "form-check" to R.string.ai_form_check, "specialized" to R.string.specialized_routines,
             "calendar" to R.string.smart_calendar, "recovery" to R.string.recovery_score, "export-data" to R.string.export_my_data, "consent" to R.string.data_consent,
@@ -86,4 +108,4 @@ import com.example.fitnessworkout.ui.components.localizedOption
 @Composable private fun Choice(label: String, value: String, options: List<String>, modifier: Modifier = Modifier, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, modifier.fillMaxWidth()) { Text(stringResource(R.string.label_value, label, localizedOption(value))) }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(localizedOption(it)) }, { change(it); open = false }) } } } }
 @Composable private fun LanguageChoice(selectedCode: String, change: (String) -> Unit) = Choice(stringResource(R.string.language), AppLocaleManager.languageName(selectedCode), AppLocaleManager.supportedLanguages.map { it.label }, Modifier.testTag("settings_language_selector")) { change(AppLocaleManager.languageCode(it)) }
 @Composable private fun Num(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }
+@OptIn(ExperimentalMaterial3Api::class) @Composable private fun GlobalPage(title: String, back: () -> Unit, snackbarHostState: SnackbarHostState? = null, content: @Composable ColumnScope.() -> Unit) = Scaffold(snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } }, topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) } } }

@@ -31,12 +31,13 @@ python3 scripts/scan_hardcoded_strings.py
 
 Audit result:
 
-- Default pack: 536 translatable keys.
-- Hindi, Spanish, French, and Arabic: 536 matching keys each.
+- Default pack: 589 translatable keys.
+- Hindi, Spanish, French, and Arabic: 589 matching keys each.
 - Missing keys: none.
 - Extra keys: none.
 - Duplicate keys: none.
 - Direct Compose hardcoded-string scan: 0 findings.
+- Premium pricing cards render localized titles, descriptions, billing periods, discounts, trial labels, and badges from string resources. `MockPremiumPlans` keeps product IDs, offer IDs, numeric amounts, and non-visible display tokens only.
 
 The scan is intentionally informational because seeded workout descriptions, mock announcement copy, internal rule-engine explanations, and localized-option fallback values are structured local content rather than direct Compose labels. They remain safe English fallback content until product translations are supplied.
 

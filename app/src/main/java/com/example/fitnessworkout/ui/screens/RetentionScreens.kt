@@ -29,12 +29,16 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 @Composable fun MeasurementTrackerScreen(vm: FitnessViewModel, back: () -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState(); var values by remember { mutableStateOf(List(7) { "" }) }; var error by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val fullError = stringResource(R.string.measurement_free_full)
     val validationError = stringResource(R.string.measurement_validation_error)
-    TrackerPage(stringResource(R.string.body_measurements), back) {
+    val savedMessage = stringResource(R.string.measurement_saved_successfully)
+    TrackerPage(stringResource(R.string.body_measurements), back, snackbarHostState) {
         item { Text(if (state.isPremiumUser) stringResource(R.string.premium_history_unlimited) else stringResource(R.string.free_measurement_entries, state.measurements.size)) }
         item { listOf(R.string.weight_kg, R.string.waist_cm, R.string.chest_cm, R.string.arms_cm, R.string.thighs_cm, R.string.hips_cm, R.string.body_fat_percent).forEachIndexed { i, label -> NumberField(values[i], { text -> values = values.toMutableList().also { it[i] = text } }, stringResource(label)) } }
         item { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -42,7 +46,7 @@ import java.util.Locale
             val parsed = values.map { if (it.isBlank()) 0f else it.toFloatOrNull() }
             if (!state.isPremiumUser && state.measurements.size >= 3) error = fullError
             else if (parsed[0] == null || parsed[0]!! <= 0f || parsed.any { it == null || it < 0f } || parsed[6]!! > 100f) error = validationError
-            else { vm.saveMeasurement(BodyMeasurement(weightKg = parsed[0]!!, waistCm = parsed[1]!!, chestCm = parsed[2]!!, armsCm = parsed[3]!!, thighsCm = parsed[4]!!, hipsCm = parsed[5]!!, bodyFatPercent = parsed[6]!!)); error = null }
+            else { vm.saveMeasurement(BodyMeasurement(weightKg = parsed[0]!!, waistCm = parsed[1]!!, chestCm = parsed[2]!!, armsCm = parsed[3]!!, thighsCm = parsed[4]!!, hipsCm = parsed[5]!!, bodyFatPercent = parsed[6]!!)); error = null; scope.launch { snackbarHostState.showSnackbar(savedMessage) } }
         }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_measurement)) } }
         if (!state.isPremiumUser && state.measurements.size >= 3) item { OutlinedButton(premium, Modifier.fillMaxWidth()) { Text(stringResource(R.string.unlock_measurement_history)) } }
         items(state.measurements) { m -> Text(stringResource(R.string.measurement_row, date(m.recordedAt), Units.weight(m.weightKg, state.settings.unitSystem), Units.length(m.waistCm, state.settings.unitSystem), m.bodyFatPercent)) }
@@ -83,13 +87,17 @@ import java.util.Locale
 
 @Composable fun ShareWorkoutScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); val summary = state.shareSummaries.firstOrNull(); val context = LocalContext.current
-    TrackerPage(stringResource(R.string.workout_share_card), back) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val shareOpened = stringResource(R.string.share_sheet_opened)
+    TrackerPage(stringResource(R.string.workout_share_card), back, snackbarHostState) {
         item { Text(summary?.let { stringResource(R.string.share_summary, it.workoutTitle, it.durationMinutes, it.caloriesBurned, it.streak) } ?: stringResource(R.string.share_card_empty), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         item { OutlinedButton({
             summary?.let {
                 val text = context.getString(R.string.share_workout_message, it.workoutTitle, it.durationMinutes, it.caloriesBurned, it.streak)
                 runCatching {
                     context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, context.getString(R.string.share_workout)))
+                    scope.launch { snackbarHostState.showSnackbar(shareOpened) }
                 }
             }
         }, Modifier.fillMaxWidth(), enabled = summary != null) { Icon(Icons.Default.Share, null); Text(" ${stringResource(R.string.share_workout)}") } }
@@ -103,7 +111,7 @@ import java.util.Locale
 
 @Composable private fun PhotoCard(label: String, uri: String, modifier: Modifier) = Card(modifier) { Column(Modifier.padding(12.dp)) { Text(label, fontWeight = FontWeight.Bold); AsyncImage(model = uri, contentDescription = label, modifier = Modifier.fillMaxWidth().height(160.dp)); Text(uri.take(32), style = MaterialTheme.typography.bodySmall) } }
 @Composable private fun LegalScreen(title: String, text: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit = {}) = TrackerPage(title, back) { item { Text(text) }; item { Column(content = content) } }
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun TrackerPage(title: String, back: () -> Unit, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+@OptIn(ExperimentalMaterial3Api::class) @Composable private fun TrackerPage(title: String, back: () -> Unit, snackbarHostState: SnackbarHostState? = null, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) = Scaffold(snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } }, topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
 @Composable private fun NumberField(value: String, change: (String) -> Unit, label: String) = OutlinedTextField(value, change, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
 private fun date(timestamp: Long) = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))

@@ -49,6 +49,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -62,6 +64,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,6 +104,7 @@ import com.example.fitnessworkout.ui.theme.FitnessGreen
 import com.example.fitnessworkout.viewmodel.FitnessUiState
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val goals = listOf("Lose Weight", "Build Muscle", "Stay Fit", "Improve Stamina")
 
@@ -412,6 +416,10 @@ fun WorkoutDetailScreen(
     var activeTimerExercise by remember { mutableStateOf<Int?>(null) }
     var remainingSeconds by remember { mutableIntStateOf(0) }
     var showStopWarning by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val workoutStarted = stringResource(R.string.workout_started)
+    val workoutCompleted = stringResource(R.string.workout_completed_successfully)
 
     LaunchedEffect(activeTimerExercise, remainingSeconds) {
         if (activeTimerExercise != null && remainingSeconds > 0) {
@@ -423,7 +431,9 @@ fun WorkoutDetailScreen(
         }
     }
 
-    Scaffold(topBar = {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
         TopAppBar(title = { Text(plan?.title ?: stringResource(R.string.workout)) }, navigationIcon = {
             IconButton(onClick = { showStopWarning = true }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
         })
@@ -441,7 +451,10 @@ fun WorkoutDetailScreen(
                     Text(stringResource(R.string.workout_summary, it.durationMinutes, it.estimatedCalories), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
                 item {
-                    Button(onStartPlayer, Modifier.fillMaxWidth().testTag("workout_start_button")) {
+                    Button({
+                        scope.launch { snackbarHostState.showSnackbar(workoutStarted) }
+                        onStartPlayer()
+                    }, Modifier.fillMaxWidth().testTag("workout_start_button")) {
                         Icon(Icons.Default.PlayArrow, null)
                         Text(" ${stringResource(R.string.start_guided_workout)}")
                     }
@@ -479,6 +492,7 @@ fun WorkoutDetailScreen(
                 Button(
                     onClick = {
                         viewModel.completeSelectedWorkout()
+                        scope.launch { snackbarHostState.showSnackbar(workoutCompleted) }
                         onFinished()
                     },
                     enabled = exercises.isNotEmpty() && completed.size == exercises.size,
@@ -729,13 +743,18 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
     val pricingRepository = remember(state.settings.selectedCurrencyCode) { PremiumPricingRepository(state.settings.selectedCurrencyCode) }
     var subscriptionPlans by remember(pricingRepository) { mutableStateOf(pricingRepository.getSubscriptionPlans()) }
     var promotionalPlans by remember(pricingRepository) { mutableStateOf(pricingRepository.getPromotionalPlans()) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val premiumUnlocked = stringResource(R.string.premium_unlocked_successfully)
     val selectedPlan = (subscriptionPlans + promotionalPlans).firstOrNull { it.isSelected }
     val selectPlan: (SubscriptionPlanUi) -> Unit = { plan ->
         pricingRepository.selectPlan(plan.productId, plan.offerId)
         subscriptionPlans = pricingRepository.getSubscriptionPlans()
         promotionalPlans = pricingRepository.getPromotionalPlans()
     }
-    Scaffold(topBar = {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
         TopAppBar(title = { Text(stringResource(R.string.premium_title)) }, navigationIcon = {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
         })
@@ -769,7 +788,10 @@ fun PremiumScreen(viewModel: FitnessViewModel, onBack: () -> Unit, onNavigate: (
             item { Text(stringResource(R.string.premium_faq)) }
             item {
                 // TODO: Replace the local toggle with Google Play Billing purchase verification.
-                Button(onClick = { viewModel.setPremium(true) }, modifier = Modifier.fillMaxWidth().testTag("premium_unlock_button")) {
+                Button(onClick = {
+                    viewModel.setPremium(true)
+                    scope.launch { snackbarHostState.showSnackbar(premiumUnlocked) }
+                }, modifier = Modifier.fillMaxWidth().testTag("premium_unlock_button")) {
                     Text(stringResource(R.string.enable_mock_plan, selectedPlan?.let { premiumTitle(it) } ?: stringResource(R.string.premium_title)))
                 }
             }
@@ -842,22 +864,22 @@ private fun premiumDescription(plan: SubscriptionPlanUi): String = stringResourc
 
 @Composable
 private fun premiumText(value: String): String = stringResource(when (value) {
-    "/ month" -> R.string.period_month
-    "/ year" -> R.string.period_year
-    " one-time" -> R.string.period_one_time
-    " first month" -> R.string.period_first_month
-    "/ year after trial" -> R.string.period_year_after_trial
-    "Save 44% vs monthly" -> R.string.save_44
-    "Best Value" -> R.string.best_value
-    "Lifetime" -> R.string.lifetime
-    "First month offer" -> R.string.first_month_offer
-    "Intro Offer" -> R.string.intro_offer
-    "50% off yearly plan" -> R.string.yearly_50_off
-    "Limited-Time Discount" -> R.string.limited_time_discount
-    "7 days free" -> R.string.seven_days_free
-    "Free Trial" -> R.string.free_trial
-    "Festival savings" -> R.string.festival_savings
-    "New Year Offer" -> R.string.new_year_offer
+    "period_month" -> R.string.period_month
+    "period_year" -> R.string.period_year
+    "period_one_time" -> R.string.period_one_time
+    "period_first_month" -> R.string.period_first_month
+    "period_year_after_trial" -> R.string.period_year_after_trial
+    "save_44" -> R.string.save_44
+    "best_value" -> R.string.best_value
+    "lifetime" -> R.string.lifetime
+    "first_month_offer" -> R.string.first_month_offer
+    "intro_offer" -> R.string.intro_offer
+    "yearly_50_off" -> R.string.yearly_50_off
+    "limited_time_discount" -> R.string.limited_time_discount
+    "seven_days_free" -> R.string.seven_days_free
+    "free_trial" -> R.string.free_trial
+    "festival_savings" -> R.string.festival_savings
+    "new_year_offer" -> R.string.new_year_offer
     else -> R.string.premium_title
 })
 

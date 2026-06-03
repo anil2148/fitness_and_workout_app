@@ -25,6 +25,7 @@ import com.example.fitnessworkout.ui.components.WorkoutPlanCard
 import com.example.fitnessworkout.viewmodel.FitnessViewModel
 import com.example.fitnessworkout.utils.Units
 import com.example.fitnessworkout.ui.components.localizedOption
+import kotlinx.coroutines.launch
 
 @Composable fun ChallengesScreen(vm: FitnessViewModel, padding: PaddingValues, openPlan: (Int) -> Unit, premium: () -> Unit) {
     val state by vm.uiState.collectAsState()
@@ -38,17 +39,20 @@ import com.example.fitnessworkout.ui.components.localizedOption
 
 @Composable fun WaterScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); var custom by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val waterAmountError = stringResource(R.string.water_amount_error)
-    FeaturePage(stringResource(R.string.water_tracker), back) {
+    val waterAdded = stringResource(R.string.water_added_successfully)
+    FeaturePage(stringResource(R.string.water_tracker), back, snackbarHostState) {
         Text("${Units.water(state.water.amountMl, state.settings.unitSystem)} / ${Units.water(state.water.goalMl, state.settings.unitSystem)}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         LinearProgressIndicator({ (state.water.amountMl / state.water.goalMl.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) }, Modifier.fillMaxWidth())
-        Button({ vm.addWater(250) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_250_ml)) }
+        Button({ vm.addWater(250); scope.launch { snackbarHostState.showSnackbar(waterAdded) } }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_250_ml)) }
         Field(custom, { custom = it }, stringResource(R.string.custom_amount_ml), true)
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         OutlinedButton({
             val amount = custom.toIntOrNull()
             if (amount == null || amount <= 0) error = waterAmountError
-            else { vm.addWater(amount); custom = ""; error = null }
+            else { vm.addWater(amount); custom = ""; error = null; scope.launch { snackbarHostState.showSnackbar(waterAdded) } }
         }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_custom_amount)) }
         TextButton(vm::resetWater, Modifier.fillMaxWidth()) { Text(stringResource(R.string.reset_today)) }
     }
@@ -99,12 +103,18 @@ import com.example.fitnessworkout.ui.components.localizedOption
 
 @Composable fun ReminderScreen(vm: FitnessViewModel, back: () -> Unit) {
     val state by vm.uiState.collectAsState(); var time by remember(state.reminders) { mutableStateOf(state.reminders.workoutTime) }; var water by remember(state.reminders) { mutableStateOf(state.reminders.waterReminder) }; var meal by remember(state.reminders) { mutableStateOf(state.reminders.mealReminder) }; var weight by remember(state.reminders) { mutableStateOf(state.reminders.weightCheckIn) }; var photoDay by remember(state.reminders) { mutableStateOf(state.reminders.progressPhotoDay) }
-    FeaturePage(stringResource(R.string.daily_reminders), back) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val reminderSaved = stringResource(R.string.reminder_saved_successfully)
+    FeaturePage(stringResource(R.string.daily_reminders), back, snackbarHostState) {
         Field(time, { time = it }, stringResource(R.string.workout_reminder_time))
         Toggle(stringResource(R.string.water_reminder), water) { water = it }; Toggle(stringResource(R.string.meal_reminder), meal) { meal = it }; Toggle(stringResource(R.string.weight_check_in), weight) { weight = it }
         Choice(stringResource(R.string.progress_photo_day), photoDay, listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")) { photoDay = it }
         // TODO: Schedule local notifications with WorkManager after notification permission UX is added.
-        Button({ vm.saveReminders(ReminderSettings(workoutTime = time, waterReminder = water, mealReminder = meal, weightCheckIn = weight, progressPhotoDay = photoDay)) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_reminder_preferences)) }
+        Button({
+            vm.saveReminders(ReminderSettings(workoutTime = time, waterReminder = water, mealReminder = meal, weightCheckIn = weight, progressPhotoDay = photoDay))
+            scope.launch { snackbarHostState.showSnackbar(reminderSaved) }
+        }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_reminder_preferences)) }
     }
 }
 
@@ -112,5 +122,5 @@ import com.example.fitnessworkout.ui.components.localizedOption
 @Composable private fun Toggle(label: String, checked: Boolean, change: (Boolean) -> Unit) = Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(label, Modifier.weight(1f)); Switch(checked, change) }
 @Composable private fun Field(value: String, change: (String) -> Unit, label: String, number: Boolean = false) = OutlinedTextField(value, change, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = if (number) KeyboardType.Number else KeyboardType.Text))
 @Composable private fun Choice(label: String, value: String, options: List<String>, change: (String) -> Unit) { var open by remember { mutableStateOf(false) }; Box { OutlinedButton({ open = true }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.label_value, label, localizedOption(value))) }; DropdownMenu(open, { open = false }) { options.forEach { DropdownMenuItem({ Text(localizedOption(it)) }, { change(it); open = false }) } } } }
-@OptIn(ExperimentalMaterial3Api::class) @Composable private fun FeaturePage(title: String, back: () -> Unit, content: @Composable ColumnScope.() -> Unit) = Scaffold(topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+@OptIn(ExperimentalMaterial3Api::class) @Composable private fun FeaturePage(title: String, back: () -> Unit, snackbarHostState: SnackbarHostState? = null, content: @Composable ColumnScope.() -> Unit) = Scaffold(snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } }, topBar = { TopAppBar({ Text(title) }, navigationIcon = { IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }) }) { padding -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
 @Composable private fun bmiLabel(bmi: Float) = stringResource(when { bmi < 18.5f -> R.string.bmi_underweight; bmi < 25f -> R.string.bmi_normal; bmi < 30f -> R.string.bmi_overweight; else -> R.string.bmi_obese })
